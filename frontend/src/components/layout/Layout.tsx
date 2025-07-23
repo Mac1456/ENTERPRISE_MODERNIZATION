@@ -24,7 +24,7 @@ export default function Layout({ children }: LayoutProps) {
         <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
 
         {/* Page content */}
-        <main className="flex-1">
+        <main className="px-4 lg:px-6 pt-4 pb-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

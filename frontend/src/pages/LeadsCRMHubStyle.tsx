@@ -214,7 +214,7 @@ export default function LeadsCRMHubStyle() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <>
       {/* Main Content Container - Full Width for Desktop CRM */}
       <div className="px-6 lg:px-8 py-8">
         {/* CRMHUB Page header */}
@@ -340,6 +340,6 @@ export default function LeadsCRMHubStyle() {
           </div>
         </div>
       )}
-    </div>
+    </>
   )
 }

@@ -552,8 +552,8 @@ const Settings: React.FC<SettingsProps> = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 lg:px-8 py-8">
+    <>
+      <div className="max-w-7xl mx-auto">
         <div className="flex h-full bg-white rounded-lg shadow">
           {/* Sidebar */}
           <div className="w-64 bg-white border-r border-gray-200">
@@ -599,7 +599,7 @@ const Settings: React.FC<SettingsProps> = () => {
           </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }
 

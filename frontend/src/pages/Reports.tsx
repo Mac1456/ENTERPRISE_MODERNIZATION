@@ -206,8 +206,8 @@ const Reports: React.FC<ReportsProps> = () => {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 lg:px-8 py-8">
+    <>
+      <div className="max-w-7xl mx-auto">
         <div className="flex h-full">
           {/* Main Content */}
           <div className={`flex-1 flex flex-col ${selectedReport ? 'lg:mr-96' : ''}`}>
@@ -343,7 +343,7 @@ const Reports: React.FC<ReportsProps> = () => {
           )}
         </div>
       </div>
-    </div>
+    </>
   )
 }
 

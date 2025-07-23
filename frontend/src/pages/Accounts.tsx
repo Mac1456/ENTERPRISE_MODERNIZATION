@@ -175,9 +175,9 @@ const Accounts: React.FC<AccountsProps> = () => {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <>
       {/* Desktop-First Layout with max-width container */}
-      <div className="max-w-7xl mx-auto px-4 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto">
         {/* Header Section - Full Width */}
         <div className="bg-white border-b border-gray-200 px-6 py-4">
           <div className="flex items-center justify-between">
@@ -302,7 +302,7 @@ const Accounts: React.FC<AccountsProps> = () => {
           </div>
         </div>
       )}
-    </div>
+    </>
   )
 }
 

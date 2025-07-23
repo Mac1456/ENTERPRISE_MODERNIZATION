@@ -161,84 +161,81 @@ const Contacts: React.FC<ContactsProps> = () => {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 lg:px-8 py-8">
-        <div className="flex h-full">
-          {/* Main Content */}
-          <div className={`flex-1 flex flex-col ${selectedContact ? 'lg:mr-96' : ''}`}>
-            {/* Header */}
-            <div className="bg-white border-b border-gray-200 px-6 py-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">Contacts</h1>
-                  <p className="text-sm text-gray-600">Manage your real estate contacts and property interests</p>
-                </div>
-                <button
-                  onClick={() => setIsCreateModalOpen(true)}
-                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  <PlusIcon className="h-4 w-4 mr-2" />
-                  Add Contact
-                </button>
-              </div>
-            </div>
-
-            {/* Filters and Search */}
-            <div className="bg-white border-b border-gray-200 px-6 py-4">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
-                <div className="flex items-center space-x-4">
-                  <div className="relative">
-                    <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                    <input
-                      type="text"
-                      placeholder="Search contacts..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
-                    />
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <FunnelIcon className="h-5 w-5 text-gray-400" />
-                    <select
-                      value={filterStatus}
-                      onChange={(e) => setFilterStatus(e.target.value as any)}
-                      className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="all">All Contacts</option>
-                      <option value="buyer">Buyers</option>
-                      <option value="seller">Sellers</option>
-                      <option value="investor">Investors</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="text-sm text-gray-500">
-                  {filteredContacts.length} of {contacts.length} contacts
-                </div>
-              </div>
-            </div>
-
-            {/* Contacts Table */}
-            <div className="flex-1 bg-gray-50 p-6">
-              <div className="overflow-x-auto">
-                <CRMHubDataTable
-                  data={filteredContacts}
-                  columns={columns}
-                  loading={loading}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Contact Detail Panel */}
-          {selectedContact && (
-            <ContactDetailPanel
-              contact={selectedContact}
-              onClose={() => setSelectedContact(null)}
-              onUpdate={() => fetchContacts()}
-            />
-          )}
+    <div className="max-w-7xl mx-auto">
+      {/* Page header */}
+      <div className="sm:flex sm:items-center sm:justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Contacts</h1>
+          <p className="mt-2 text-sm text-gray-600">
+            Manage your real estate contacts and property interests
+          </p>
+        </div>
+        <div className="mt-4 sm:mt-0">
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            <PlusIcon className="h-4 w-4 mr-2" />
+            Add Contact
+          </button>
         </div>
       </div>
+
+      {/* Filters and Search */}
+      <div className="bg-white rounded-lg shadow mb-6">
+        <div className="px-6 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+            <div className="flex items-center space-x-4">
+              <div className="relative">
+                <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search contacts..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
+                />
+              </div>
+              <div className="flex items-center space-x-2">
+                <FunnelIcon className="h-5 w-5 text-gray-400" />
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value as any)}
+                  className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="all">All Contacts</option>
+                  <option value="buyer">Buyers</option>
+                  <option value="seller">Sellers</option>
+                  <option value="investor">Investors</option>
+                </select>
+              </div>
+            </div>
+            <div className="text-sm text-gray-500">
+              {filteredContacts.length} of {contacts.length} contacts
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Contacts Table */}
+      <div className="bg-white rounded-lg shadow">
+        <div className="overflow-x-auto">
+          <CRMHubDataTable
+            data={filteredContacts}
+            columns={columns}
+            loading={loading}
+          />
+        </div>
+      </div>
+
+      {/* Contact Detail Panel */}
+      {selectedContact && (
+        <ContactDetailPanel
+          contact={selectedContact}
+          onClose={() => setSelectedContact(null)}
+          onUpdate={() => fetchContacts()}
+        />
+      )}
     </div>
   )
 }
@@ -250,7 +247,7 @@ const ContactDetailPanel: React.FC<{
   onUpdate: () => void
 }> = ({ contact, onClose, onUpdate }) => {
   return (
-    <div className="absolute right-0 top-0 h-full w-96 bg-white border-l border-gray-200 shadow-lg z-10">
+    <div className="fixed right-0 top-0 h-full w-96 bg-white border-l border-gray-200 shadow-lg z-50">
       <div className="flex flex-col h-full">
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-200">

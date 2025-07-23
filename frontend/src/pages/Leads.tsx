@@ -147,7 +147,7 @@ export default function Leads() {
 
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto">
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 rounded w-1/4"></div>
           <div className="h-4 bg-gray-200 rounded w-1/2"></div>
@@ -160,7 +160,7 @@ export default function Leads() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto">
       {/* Page header */}
       <div className="sm:flex sm:items-center sm:justify-between mb-8">
         <div>

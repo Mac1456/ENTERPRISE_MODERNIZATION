@@ -224,30 +224,29 @@ const Properties: React.FC<PropertiesProps> = () => {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 lg:px-8 py-8">
-        <div className="flex h-full">
-          {/* Main Content */}
-          <div className={`flex-1 flex flex-col ${selectedProperty ? 'lg:mr-96' : ''}`}>
-            {/* Header */}
-            <div className="bg-white border-b border-gray-200 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Properties</h1>
-              <p className="text-sm text-gray-600">Manage your real estate property listings</p>
-            </div>
-            <button
-              onClick={() => setIsCreateModalOpen(true)}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              <PlusIcon className="h-4 w-4 mr-2" />
-              Add Property
-            </button>
-          </div>
+    <div className="max-w-7xl mx-auto">
+      {/* Page header */}
+      <div className="sm:flex sm:items-center sm:justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Properties</h1>
+          <p className="mt-2 text-sm text-gray-600">
+            Manage your real estate property listings
+          </p>
         </div>
+        <div className="mt-4 sm:mt-0">
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            <PlusIcon className="h-4 w-4 mr-2" />
+            Add Property
+          </button>
+        </div>
+      </div>
 
-        {/* Stats Overview */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4">
+      {/* Stats Overview */}
+      <div className="bg-white rounded-lg shadow mb-6">
+        <div className="px-6 py-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-green-600">{properties.filter(p => p.status === 'Active').length}</div>
@@ -269,9 +268,11 @@ const Properties: React.FC<PropertiesProps> = () => {
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Filters and Search */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4">
+      {/* Filters and Search */}
+      <div className="bg-white rounded-lg shadow mb-6">
+        <div className="px-6 py-4">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-3 lg:space-y-0">
             <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
               <div className="relative">
@@ -332,29 +333,27 @@ const Properties: React.FC<PropertiesProps> = () => {
             </div>
           </div>
         </div>
+      </div>
 
-            {/* Properties Table */}
-            <div className="flex-1 bg-gray-50 p-6">
-              <div className="overflow-x-auto">
-                <CRMHubDataTable
-                  data={filteredProperties}
-                  columns={columns}
-                  loading={loading}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Property Detail Panel */}
-          {selectedProperty && (
-            <PropertyDetailPanel
-              property={selectedProperty}
-              onClose={() => setSelectedProperty(null)}
-              onUpdate={() => fetchProperties()}
-            />
-          )}
+      {/* Properties Table */}
+      <div className="bg-white rounded-lg shadow">
+        <div className="overflow-x-auto">
+          <CRMHubDataTable
+            data={filteredProperties}
+            columns={columns}
+            loading={loading}
+          />
         </div>
       </div>
+
+      {/* Property Detail Panel */}
+      {selectedProperty && (
+        <PropertyDetailPanel
+          property={selectedProperty}
+          onClose={() => setSelectedProperty(null)}
+          onUpdate={() => fetchProperties()}
+        />
+      )}
     </div>
   )
 }
@@ -366,7 +365,7 @@ const PropertyDetailPanel: React.FC<{
   onUpdate: () => void
 }> = ({ property, onClose, onUpdate }) => {
   return (
-    <div className="absolute right-0 top-0 h-full w-96 bg-white border-l border-gray-200 shadow-lg z-10">
+    <div className="fixed right-0 top-0 h-full w-96 bg-white border-l border-gray-200 shadow-lg z-50">
       <div className="flex flex-col h-full">
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-200">

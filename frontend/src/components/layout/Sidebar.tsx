@@ -58,7 +58,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         transition={{ type: 'tween', duration: 0.3 }}
         className={`
           fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 
-          lg:static lg:translate-x-0 lg:inset-0
+          lg:z-30 lg:fixed
           ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}
       >

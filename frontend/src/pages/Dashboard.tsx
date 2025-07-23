@@ -179,7 +179,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <>
       {/* Integration Status */}
       <IntegrationStatus 
         isConnected={isConnectedToSuiteCRM}
@@ -190,9 +190,9 @@ export default function Dashboard() {
       />
 
       {/* Main Content Container - Centered with max-width */}
-      <div className="max-w-7xl mx-auto px-4 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto">
         {/* CRMHUB Header */}
-        <div className="mb-8">
+        <div className="mb-6">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -219,7 +219,7 @@ export default function Dashboard() {
         </div>
 
         {/* Stats cards - Full width desktop grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
         <CRMHubStatsCard
           title="Total Contacts"
           value={statsLoading ? '...' : formatNumber(stats?.totalContacts || 0)}
@@ -295,7 +295,7 @@ export default function Dashboard() {
       </div>
 
         {/* Charts and content - Optimized for wide desktop */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
           {/* Sales Pipeline Chart */}
           <div className="lg:col-span-1 xl:col-span-2">
             <SalesPipelineChart
@@ -332,7 +332,7 @@ export default function Dashboard() {
         </div>
 
         {/* Bottom section - Grid with 12 columns */}
-        <div className="grid grid-cols-12 gap-6">
+        <div className="grid grid-cols-12 gap-4">
           {/* Quick Actions */}
           <div className="col-span-12 sm:col-span-6 lg:col-span-3 xl:col-span-2">
             <QuickActions
@@ -356,7 +356,7 @@ export default function Dashboard() {
       </div>
 
       {/* Mobile optimization notice */}
-      <div className="mt-8 lg:hidden">
+      <div className="mt-6 lg:hidden">
         <div className="bg-primary-50 border border-primary-200 rounded-lg p-4">
           <div className="flex items-start">
             <BuildingOffice2Icon className="w-5 h-5 text-primary-600 mt-0.5 mr-3 flex-shrink-0" />
@@ -369,6 +369,6 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }
