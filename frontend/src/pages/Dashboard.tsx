@@ -13,9 +13,6 @@ import {
 
 // Components
 import CRMHubStatsCard from '@/components/dashboard/CRMHubStatsCard'
-import SalesPipelineChart from '@/components/dashboard/SalesPipelineChart'
-import ActivityFeed from '@/components/dashboard/ActivityFeed'
-import QuickActions from '@/components/dashboard/QuickActions'
 import IntegrationStatus from '@/components/shared/IntegrationStatus'
 
 // Services
@@ -35,22 +32,7 @@ const mockStats = {
   conversionRate: 24.5
 }
 
-const mockPipelineData = [
-  { name: 'Prospecting', value: 15 },
-  { name: 'Qualification', value: 12 },
-  { name: 'Proposal', value: 8 },
-  { name: 'Negotiation', value: 5 },
-  { name: 'Closed Won', value: 12 },
-  { name: 'Closed Lost', value: 3 }
-]
 
-const mockLeadSourceData = [
-  { name: 'Website', value: 35 },
-  { name: 'Referrals', value: 28 },
-  { name: 'Social Media', value: 18 },
-  { name: 'Cold Calls', value: 12 },
-  { name: 'Other', value: 7 }
-]
 
 const mockActivityFeed = [
   {
@@ -113,19 +95,7 @@ export default function Dashboard() {
     retry: false
   })
 
-  const { data: pipelineData, isLoading: pipelineLoading } = useQuery({
-    queryKey: ['sales-pipeline'],
-    queryFn: () => Promise.resolve(mockPipelineData),
-    staleTime: Infinity,
-    retry: false
-  })
 
-  const { data: leadSourceData, isLoading: leadSourceLoading } = useQuery({
-    queryKey: ['lead-sources'],
-    queryFn: () => Promise.resolve(mockLeadSourceData),
-    staleTime: Infinity,
-    retry: false
-  })
 
   const { data: activityFeed, isLoading: activityLoading } = useQuery({
     queryKey: ['activity-feed'],
@@ -134,36 +104,7 @@ export default function Dashboard() {
     retry: false
   })
 
-  // Quick action handlers
-  const handleCreateLead = () => {
-    toast.success('Lead creation form would open here')
-    // In real app: navigate to lead creation form
-  }
 
-  const handleAddProperty = () => {
-    toast.success('Property listing form would open here')
-    // In real app: navigate to property creation form
-  }
-
-  const handleLogCall = () => {
-    toast.success('Call logging form would open here')
-    // In real app: open call logging modal
-  }
-
-  const handleScheduleMeeting = () => {
-    toast.success('Meeting scheduler would open here')
-    // In real app: open calendar scheduling modal
-  }
-
-  const handleCreateDocument = () => {
-    toast.success('Document creation would open here')
-    // In real app: open document creation modal
-  }
-
-  const handleStartChat = () => {
-    toast.success('Messaging interface would open here')
-    // In real app: open messaging interface
-  }
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -218,20 +159,8 @@ export default function Dashboard() {
           </motion.div>
         </div>
 
-        {/* Stats cards - Full width desktop grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
-        <CRMHubStatsCard
-          title="Total Contacts"
-          value={statsLoading ? '...' : formatNumber(stats?.totalContacts || 0)}
-          subtitle="Active contacts in CRM"
-          trend={{
-            value: '+12%',
-            period: 'From the last month',
-            isPositive: true
-          }}
-          icon={UsersIcon}
-          color="blue"
-        />
+        {/* Essential KPI Cards - Reduced to 4 key metrics */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <CRMHubStatsCard
           title="Active Leads"
           value={statsLoading ? '...' : formatNumber(stats?.totalLeads || 0)}
@@ -269,102 +198,154 @@ export default function Dashboard() {
           color="purple"
         />
         <CRMHubStatsCard
-          title="Active Properties"
-          value="156"
-          subtitle="Listed properties"
+          title="Total Contacts"
+          value={statsLoading ? '...' : formatNumber(stats?.totalContacts || 0)}
+          subtitle="Active contacts in CRM"
           trend={{
-            value: '+5%',
+            value: '+12%',
             period: 'From the last month',
             isPositive: true
           }}
-          icon={BuildingOffice2Icon}
+          icon={UsersIcon}
           color="blue"
         />
-        <CRMHubStatsCard
-          title="Conversion Rate"
-          value="24.5%"
-          subtitle="Lead to customer"
-          trend={{
-            value: '+3.2%',
-            period: 'From the last month',
-            isPositive: true
-          }}
-          icon={ChartBarIcon}
-          color="green"
-        />
       </div>
 
-        {/* Charts and content - Optimized for wide desktop */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-          {/* Sales Pipeline Chart */}
-          <div className="lg:col-span-1 xl:col-span-2">
-            <SalesPipelineChart
-              data={pipelineData || []}
-              title="Sales Pipeline"
-              type="bar"
-            />
+        {/* Core CRM Data Tables - Similar to original SuiteCRM */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+          {/* My Top Open Opportunities */}
+          <div className="bg-white rounded-lg shadow border border-gray-200">
+            <div className="border-b border-gray-200 px-4 py-3">
+              <h3 className="text-sm font-medium text-gray-900">My Top Open Opportunities</h3>
+            </div>
+            <div className="p-4">
+              <div className="overflow-hidden">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Opportunity</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Close Date</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    <tr>
+                      <td className="px-3 py-2 text-sm text-gray-900">Downtown Condo</td>
+                      <td className="px-3 py-2 text-sm text-gray-900">$320,000</td>
+                      <td className="px-3 py-2 text-sm text-gray-600">12/15/24</td>
+                    </tr>
+                    <tr>
+                      <td className="px-3 py-2 text-sm text-gray-900">Oak Street House</td>
+                      <td className="px-3 py-2 text-sm text-gray-900">$475,000</td>
+                      <td className="px-3 py-2 text-sm text-gray-600">01/08/25</td>
+                    </tr>
+                    <tr>
+                      <td className="px-3 py-2 text-sm text-gray-900">Luxury Penthouse</td>
+                      <td className="px-3 py-2 text-sm text-gray-900">$850,000</td>
+                      <td className="px-3 py-2 text-sm text-gray-600">02/20/25</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
 
-          {/* Lead Sources Pie Chart */}
-          <div className="lg:col-span-1 xl:col-span-1">
-            <SalesPipelineChart
-              data={leadSourceData || []}
-              title="Lead Sources"
-              type="pie"
-            />
+          {/* My Accounts */}
+          <div className="bg-white rounded-lg shadow border border-gray-200">
+            <div className="border-b border-gray-200 px-4 py-3">
+              <h3 className="text-sm font-medium text-gray-900">My Accounts</h3>
+            </div>
+            <div className="p-4">
+              <div className="overflow-hidden">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Phone</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    <tr>
+                      <td className="px-3 py-2 text-sm text-gray-900">Johnson Properties</td>
+                      <td className="px-3 py-2 text-sm text-gray-600">Customer</td>
+                      <td className="px-3 py-2 text-sm text-gray-600">(555) 111-2222</td>
+                    </tr>
+                    <tr>
+                      <td className="px-3 py-2 text-sm text-gray-900">Anderson Family</td>
+                      <td className="px-3 py-2 text-sm text-gray-600">Prospect</td>
+                      <td className="px-3 py-2 text-sm text-gray-600">(555) 333-4444</td>
+                    </tr>
+                    <tr>
+                      <td className="px-3 py-2 text-sm text-gray-900">Wilson Group</td>
+                      <td className="px-3 py-2 text-sm text-gray-600">Investor</td>
+                      <td className="px-3 py-2 text-sm text-gray-600">(555) 555-6666</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
 
-          {/* Additional Chart for Desktop */}
-          <div className="lg:col-span-1 xl:col-span-1">
-            <SalesPipelineChart
-              data={[
-                { name: 'Jan', value: 45 },
-                { name: 'Feb', value: 52 },
-                { name: 'Mar', value: 48 },
-                { name: 'Apr', value: 67 },
-                { name: 'May', value: 58 },
-                { name: 'Jun', value: 71 }
-              ]}
-              title="Monthly Performance"
-              type="bar"
-            />
+          {/* My Recent Leads */}
+          <div className="bg-white rounded-lg shadow border border-gray-200">
+            <div className="border-b border-gray-200 px-4 py-3">
+              <h3 className="text-sm font-medium text-gray-900">My Recent Leads</h3>
+            </div>
+            <div className="p-4">
+              <div className="overflow-hidden">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    <tr>
+                      <td className="px-3 py-2 text-sm text-gray-900">Sarah Johnson</td>
+                      <td className="px-3 py-2 text-sm text-gray-600">sarah.j@email.com</td>
+                      <td className="px-3 py-2 text-sm text-green-600">New</td>
+                    </tr>
+                    <tr>
+                      <td className="px-3 py-2 text-sm text-gray-900">Mike Anderson</td>
+                      <td className="px-3 py-2 text-sm text-gray-600">mike.a@email.com</td>
+                      <td className="px-3 py-2 text-sm text-blue-600">Qualified</td>
+                    </tr>
+                    <tr>
+                      <td className="px-3 py-2 text-sm text-gray-900">Lisa Thompson</td>
+                      <td className="px-3 py-2 text-sm text-gray-600">lisa.t@email.com</td>
+                      <td className="px-3 py-2 text-sm text-orange-600">Follow-up</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Bottom section - Grid with 12 columns */}
-        <div className="grid grid-cols-12 gap-4">
-          {/* Quick Actions */}
-          <div className="col-span-12 sm:col-span-6 lg:col-span-3 xl:col-span-2">
-            <QuickActions
-              onCreateLead={handleCreateLead}
-              onAddProperty={handleAddProperty}
-              onLogCall={handleLogCall}
-              onScheduleMeeting={handleScheduleMeeting}
-              onCreateDocument={handleCreateDocument}
-              onStartChat={handleStartChat}
-            />
+        {/* Recent Activity Stream - Simple and focused like original */}
+        <div className="bg-white rounded-lg shadow border border-gray-200">
+          <div className="border-b border-gray-200 px-4 py-3">
+            <h3 className="text-sm font-medium text-gray-900">My Activity Stream</h3>
           </div>
-
-          {/* Activity Feed */}
-          <div className="col-span-12 sm:col-span-6 lg:col-span-9 xl:col-span-10">
-            <ActivityFeed
-              activities={activityFeed || []}
-              isLoading={activityLoading}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile optimization notice */}
-      <div className="mt-6 lg:hidden">
-        <div className="bg-primary-50 border border-primary-200 rounded-lg p-4">
-          <div className="flex items-start">
-            <BuildingOffice2Icon className="w-5 h-5 text-primary-600 mt-0.5 mr-3 flex-shrink-0" />
-            <div>
-              <h3 className="text-sm font-medium text-primary-800">Mobile Optimized</h3>
-              <p className="text-sm text-primary-700 mt-1">
-                This dashboard is fully optimized for mobile use. Swipe and tap to interact with charts and data.
-              </p>
+          <div className="p-4">
+            <div className="space-y-3">
+              {(activityFeed || []).map((activity) => (
+                <div key={activity.id} className="flex items-start space-x-3">
+                  <div className="flex-shrink-0">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-gray-900">{activity.title}</p>
+                    <p className="text-xs text-gray-500 mt-1">{activity.description}</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {activity.userName} • {new Date(activity.timestamp).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
