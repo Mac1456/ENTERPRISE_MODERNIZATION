@@ -42,6 +42,19 @@ This project transforms SuiteCRM, an enterprise-grade open-source CRM with decad
 7. **Email Integration:** Campaign management, templates, tracking
 8. **Workflow Automation:** Business process automation, triggers, notifications
 
+#### System Data Flows & Integration Points
+Below is a high-level view of how core SuiteCRM components interact (full diagram lives in `docs/technical/suitecrm-architecture-deep-dive.md#data-flow`).
+
+* **HTTP → Index.php → Module Controller → SugarBean → DB** — standard MVC request cycle.
+* **Logic Hooks** fire **Workflow Engine** and **Scheduler** which enqueue emails and other background jobs.
+* **External Integrations**
+  * Email (IMAP/SMTP) via `modules/Emails/` & `service/v4_1/`
+  * REST & SOAP APIs (`Api/`, `service/v4_1`, `service/v8`) consumed by mobile apps and portals.
+  * SAML/OAuth providers handled in `modules/Users/authenticators`.
+  * File storage (local FS now, will evolve to S3-compatible service).
+
+Understanding these touch-points ensures we can safely replace presentation & API layers while preserving business rules.
+
 ### Target User Segment: Real Estate Professionals
 
 #### Primary User Personas
@@ -198,6 +211,32 @@ This project transforms SuiteCRM, an enterprise-grade open-source CRM with decad
 4. **Document Management** - DocuSign, Adobe Sign for e-signatures
 5. **Marketing Platforms** - Mailchimp, social media automation
 6. **Financial Tools** - Commission tracking, accounting software integration
+
+#### Code Quality, Testing & Standards
+
+| Discipline | Approach |
+|------------|----------|
+| **PHP standards** | PSR-12, PHPCS enforced in CI (`vendor/bin/phpcs --standard=PSR12`). |
+| **JS/TS** | ESLint + Prettier config committed; executed in pre-commit hook. |
+| **Unit tests** | PHPUnit for new PHP services; legacy `include/` patched via regression tests. |
+| **Acceptance tests** | Codeception browser tests for the 6 new features (mobile & desktop). |
+| **CI pipeline** | GitHub Actions → lint → unit → acceptance → Docker build → push. |
+| **Coverage target** | ≥70 % for new code, safety-net tests for untouched legacy modules. |
+
+These practices map directly to the grading rubric’s “Technical Implementation Quality”.
+
+### AI-Assisted Modernization Methodology
+
+We will leverage Claude, Cursor, and GitHub Copilot in three repeatable loops:
+
+1. **Code Comprehension Loop**  
+   *Natural-language queries* → semantic search on repo → summarise modules / data models.
+2. **Refactor & Scaffold Loop**  
+   AI generates TypeScript/PHP scaffolds, unit-test stubs, and migration scripts which are **always reviewed by a human** before commit.
+3. **Testing & Fix Loop**  
+   Failing tests fed back into AI with error logs to propose patches; human validates and runs tests again.
+
+Prompts & outputs are logged automatically in `docs/ai-utilization/ai-development-log.md` to provide full visibility for the AI Utilization score.
 
 ### Project Timeline & Milestones
 

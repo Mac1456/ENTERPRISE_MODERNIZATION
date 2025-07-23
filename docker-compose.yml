@@ -1,0 +1,41 @@
+version: "3.9"
+
+services:
+  db:
+    image: mariadb:10.6
+    container_name: suitecrm_db
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: suitecrm
+      MARIADB_USER: suitecrm
+      MARIADB_PASSWORD: suitecrm
+    volumes:
+      - db_data:/var/lib/mysql
+
+  crm:
+    image: bitnami/suitecrm:7
+    container_name: suitecrm_app
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      SUITECRM_DATABASE_HOST: db
+      SUITECRM_DATABASE_PORT_NUMBER: 3306
+      SUITECRM_DATABASE_NAME: suitecrm
+      SUITECRM_DATABASE_USER: suitecrm
+      SUITECRM_DATABASE_PASSWORD: suitecrm
+      SUITECRM_USERNAME: admin
+      SUITECRM_PASSWORD: admin123
+      SUITECRM_FIRST_NAME: Admin
+      SUITECRM_LAST_NAME: User
+      SUITECRM_EMAIL: admin@example.com
+      ALLOW_EMPTY_PASSWORD: "yes"
+    ports:
+      - "8080:8080"
+# If you want to mount local customized code, uncomment below line
+#    volumes:
+#      - ./backend:/bitnami/suitecrm
+
+volumes:
+  db_data: 
