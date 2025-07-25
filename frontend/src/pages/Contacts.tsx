@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Contact, PropertyInterest, BuyerProfile, SellerProfile, PropertyType } from '../types'
 import CRMHubDataTable from '../components/shared/CRMHubDataTable'
+import ContactModal from '../components/contacts/ContactModal'
 import { apiService } from '../services/api'
 import { 
   PlusIcon, 
@@ -19,12 +20,28 @@ import { HeartIcon as HeartSolidIcon, StarIcon as StarSolidIcon } from '@heroico
 
 interface ContactsProps {}
 
+// Helper functions for contact type display
+const getContactTypeIcon = (contact: Contact) => {
+  if (contact.buyerProfile) return <HomeIcon className="h-4 w-4 text-blue-500" />
+  if (contact.sellerProfile) return <BuildingOfficeIcon className="h-4 w-4 text-green-500" />
+  return <UserGroupIcon className="h-4 w-4 text-gray-500" />
+}
+
+const getContactTypeLabel = (contact: Contact) => {
+  if (contact.buyerProfile && contact.sellerProfile) return 'Buyer/Seller'
+  if (contact.buyerProfile) return 'Buyer'
+  if (contact.sellerProfile) return 'Seller'
+  return 'Contact'
+}
+
 const Contacts: React.FC<ContactsProps> = () => {
   const [contacts, setContacts] = useState<Contact[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [editingContact, setEditingContact] = useState<Contact | null>(null)
   const [filterStatus, setFilterStatus] = useState<'all' | 'buyer' | 'seller' | 'investor'>('all')
 
   useEffect(() => {
@@ -48,17 +65,23 @@ const Contacts: React.FC<ContactsProps> = () => {
     setSelectedContact(contact)
   }
 
-  const getContactTypeIcon = (contact: Contact) => {
-    if (contact.buyerProfile) return <HomeIcon className="h-4 w-4 text-blue-500" />
-    if (contact.sellerProfile) return <BuildingOfficeIcon className="h-4 w-4 text-green-500" />
-    return <UserGroupIcon className="h-4 w-4 text-gray-500" />
+  const handleContactSave = (contact: Contact) => {
+    if (editingContact) {
+      // Update existing contact
+      setContacts(prev => prev.map(c => c.id === contact.id ? contact : c))
+    } else {
+      // Add new contact
+      setContacts(prev => [...prev, contact])
+    }
+    setIsCreateModalOpen(false)
+    setIsEditModalOpen(false)
+    setEditingContact(null)
   }
 
-  const getContactTypeLabel = (contact: Contact) => {
-    if (contact.buyerProfile && contact.sellerProfile) return 'Buyer/Seller'
-    if (contact.buyerProfile) return 'Buyer'
-    if (contact.sellerProfile) return 'Seller'
-    return 'Contact'
+  const handleEditContact = (contact: Contact) => {
+    setEditingContact(contact)
+    setIsEditModalOpen(true)
+    setSelectedContact(null) // Close detail panel
   }
 
   const filteredContacts = contacts.filter(contact => {
@@ -224,6 +247,7 @@ const Contacts: React.FC<ContactsProps> = () => {
             data={filteredContacts}
             columns={columns}
             loading={loading}
+            onRowClick={handleContactClick}
           />
         </div>
       </div>
@@ -234,8 +258,27 @@ const Contacts: React.FC<ContactsProps> = () => {
           contact={selectedContact}
           onClose={() => setSelectedContact(null)}
           onUpdate={() => fetchContacts()}
+          onEdit={handleEditContact}
         />
       )}
+
+      {/* Create Contact Modal */}
+      <ContactModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSave={handleContactSave}
+      />
+
+      {/* Edit Contact Modal */}
+      <ContactModal
+        contact={editingContact}
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false)
+          setEditingContact(null)
+        }}
+        onSave={handleContactSave}
+      />
     </div>
   )
 }
@@ -245,7 +288,8 @@ const ContactDetailPanel: React.FC<{
   contact: Contact
   onClose: () => void
   onUpdate: () => void
-}> = ({ contact, onClose, onUpdate }) => {
+  onEdit: (contact: Contact) => void
+}> = ({ contact, onClose, onUpdate, onEdit }) => {
   return (
     <div className="fixed right-0 top-0 h-full w-96 bg-white border-l border-gray-200 shadow-lg z-50">
       <div className="flex flex-col h-full">
@@ -418,7 +462,10 @@ const ContactDetailPanel: React.FC<{
 
         {/* Actions */}
         <div className="px-6 py-4 border-t border-gray-200">
-          <button className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <button 
+            onClick={() => onEdit(contact)}
+            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
             Edit Contact
           </button>
         </div>

@@ -54,6 +54,12 @@ export class LeadService {
       .then(response => response.data)
   }
 
+  // Unassign lead from current user
+  static async unassignLead(id: string): Promise<Lead> {
+    return apiService.patch<ApiResponse<Lead>>(`/leads/${id}/assign`, { userId: 'unassign' })
+      .then(response => response.data)
+  }
+
   // Auto-assign leads based on rules
   static async autoAssignLeads(leadIds: string[]): Promise<{
     assigned: { leadId: string, userId: string }[]

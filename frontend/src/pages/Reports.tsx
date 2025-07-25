@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Report, ReportType } from '../types'
+import ReportModal from '../components/reports/ReportModal'
 import { apiService } from '../services/api'
 import { 
   PlusIcon, 
@@ -31,6 +32,8 @@ const Reports: React.FC<ReportsProps> = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedReport, setSelectedReport] = useState<Report | null>(null)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [editingReport, setEditingReport] = useState<Report | null>(null)
   const [filterType, setFilterType] = useState<ReportType | 'all'>('all')
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid')
 
@@ -76,6 +79,29 @@ const Reports: React.FC<ReportsProps> = () => {
     // In a real app, this would export the report data
     console.log('Exporting report:', report.name)
     alert(`Exporting report: ${report.name}`)
+  }
+
+  const handleEditReport = (report: Report) => {
+    setEditingReport(report)
+    setIsEditModalOpen(true)
+  }
+
+  const handleDeleteReport = async (report: Report) => {
+    if (window.confirm('Are you sure you want to delete this report?')) {
+      try {
+        await apiService.delete(`/reports/${report.id}`)
+        fetchReports()
+        setSelectedReport(null)
+        alert('Report deleted successfully!')
+      } catch (error) {
+        console.error('Error deleting report:', error)
+        alert('Error deleting report. Please try again.')
+      }
+    }
+  }
+
+  const handleSaveReport = (report: Report) => {
+    fetchReports()
   }
 
   const renderGridView = () => (
@@ -195,6 +221,7 @@ const Reports: React.FC<ReportsProps> = () => {
             <ArrowDownTrayIcon className="h-4 w-4" />
           </button>
           <button
+            onClick={() => handleEditReport(report)}
             className="text-gray-600 hover:text-gray-700"
             title="Edit Report"
           >
@@ -343,6 +370,23 @@ const Reports: React.FC<ReportsProps> = () => {
           )}
         </div>
       </div>
+
+      {/* Report Modals */}
+      <ReportModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSave={handleSaveReport}
+      />
+
+      <ReportModal
+        report={editingReport}
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false)
+          setEditingReport(null)
+        }}
+        onSave={handleSaveReport}
+      />
     </>
   )
 }
@@ -540,14 +584,23 @@ const ReportDetailPanel: React.FC<{
             {isRunning ? 'Running Report...' : 'Run Report'}
           </button>
           <div className="grid grid-cols-2 gap-2">
-            <button className="bg-gray-100 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500">
+            <button 
+              onClick={() => handleEditReport(report)}
+              className="bg-gray-100 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
+            >
               Edit Report
             </button>
-            <button className="bg-green-100 text-green-700 py-2 px-4 rounded-md hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-green-500">
+            <button 
+              onClick={() => handleExportReport(report)}
+              className="bg-green-100 text-green-700 py-2 px-4 rounded-md hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-green-500"
+            >
               Export
             </button>
           </div>
-          <button className="w-full bg-red-100 text-red-700 py-2 px-4 rounded-md hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500">
+          <button 
+            onClick={() => handleDeleteReport(report)}
+            className="w-full bg-red-100 text-red-700 py-2 px-4 rounded-md hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500"
+          >
             Delete Report
           </button>
         </div>

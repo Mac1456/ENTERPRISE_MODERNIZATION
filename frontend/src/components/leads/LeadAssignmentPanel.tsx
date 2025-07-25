@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { Dialog, Transition } from '@headlessui/react'
 import { motion } from 'framer-motion'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
@@ -9,13 +10,17 @@ import {
   TrophyIcon,
   ChartBarIcon,
   CogIcon,
-  LightBulbIcon
+  LightBulbIcon,
+  XMarkIcon,
+  UserMinusIcon
 } from '@heroicons/react/24/outline'
 
 import { LeadService } from '@/services/leadService'
 import { Lead, User } from '@/types'
 
 interface LeadAssignmentPanelProps {
+  isOpen: boolean
+  onClose: () => void
   lead: Lead
   onAssignmentComplete: () => void
 }
@@ -81,28 +86,88 @@ const mockAgents: AgentCapacity[] = [
   }
 ]
 
-export default function LeadAssignmentPanel({ lead, onAssignmentComplete }: LeadAssignmentPanelProps) {
+export default function LeadAssignmentPanel({ isOpen, onClose, lead, onAssignmentComplete }: LeadAssignmentPanelProps) {
   const [selectedAgent, setSelectedAgent] = useState<string>('')
   const [assignmentReason, setAssignmentReason] = useState<string>('')
-  const [isAutoAssigning, setIsAutoAssigning] = useState(false)
   const queryClient = useQueryClient()
 
-  // In a real app, this would fetch from the API
+  // Fetch real agents from API
   const { data: agents } = useQuery({
     queryKey: ['agent-capacity'],
-    queryFn: () => Promise.resolve(mockAgents)
+    queryFn: async () => {
+      try {
+        const response = await fetch('http://localhost:8080/custom/modernui/api.php/users')
+        const result = await response.json()
+        
+        if (!result.success) {
+          // Fallback to mock data if API fails
+          console.warn('Failed to fetch agents from API, using mock data')
+          return mockAgents
+        }
+        
+        // Transform API response to match component expectations
+        return result.data.map((agent: any) => ({
+          userId: agent.id,
+          userName: agent.name,
+          currentLeads: agent.currentLeads || 0,
+          maxCapacity: agent.maxCapacity || 25,
+          specializations: ['General'], // Mock for now
+          location: 'Various', // Mock for now
+          performance: agent.performance || {
+            conversionRate: 20,
+            averageResponseTime: 15,
+            closedDeals: 5
+          },
+          availability: agent.availability || 'Available'
+        }))
+      } catch (error) {
+        console.warn('Error fetching agents, using mock data:', error)
+        return mockAgents
+      }
+    }
   })
 
   const assignLeadMutation = useMutation({
     mutationFn: ({ leadId, userId }: { leadId: string, userId: string }) =>
       LeadService.assignLead(leadId, userId),
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['leads'] })
-      toast.success('Lead assigned successfully!')
+      toast.success(data.message || 'Lead assigned successfully!')
       onAssignmentComplete()
     },
-    onError: () => {
-      toast.error('Failed to assign lead')
+    onError: (error: any) => {
+      console.error('Assignment error:', error)
+      const errorData = error?.response?.data
+      const errorMessage = errorData?.message || errorData?.error || 'Failed to assign lead'
+      
+      // Handle specific error types with user-friendly messages
+      if (errorData?.error === 'AgentNotFound') {
+        toast.error('The selected agent does not exist in the system')
+      } else if (errorData?.error === 'AgentInactive') {
+        toast.error('Cannot assign leads to inactive agents')
+      } else if (errorData?.error === 'AgentTerminated') {
+        toast.error('Cannot assign leads to terminated employees')
+      } else if (errorData?.error === 'LeadAlreadyAssigned') {
+        toast.error('This lead is already assigned to the selected agent')
+      } else {
+        toast.error(errorMessage)
+      }
+    }
+  })
+
+  const unassignLeadMutation = useMutation({
+    mutationFn: (leadId: string) => LeadService.unassignLead(leadId),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] })
+      toast.success(data.message || 'Lead unassigned successfully!')
+      onAssignmentComplete()
+    },
+    onError: (error: any) => {
+      console.error('Unassign error:', error)
+      const errorData = error?.response?.data
+      const errorMessage = errorData?.message || errorData?.error || 'Failed to unassign lead'
+      
+      toast.error(errorMessage)
     }
   })
 
@@ -110,11 +175,15 @@ export default function LeadAssignmentPanel({ lead, onAssignmentComplete }: Lead
     mutationFn: (leadIds: string[]) => LeadService.autoAssignLeads(leadIds),
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['leads'] })
-      toast.success(`Lead auto-assigned successfully!`)
+      toast.success('Lead auto-assigned successfully!')
       onAssignmentComplete()
     },
-    onError: () => {
-      toast.error('Auto-assignment failed')
+    onError: (error: any) => {
+      console.error('Auto-assignment error:', error)
+      const errorData = error?.response?.data
+      const errorMessage = errorData?.message || errorData?.error || 'Auto-assignment failed'
+      
+      toast.error(errorMessage)
     }
   })
 
@@ -126,10 +195,12 @@ export default function LeadAssignmentPanel({ lead, onAssignmentComplete }: Lead
     assignLeadMutation.mutate({ leadId: lead.id, userId: selectedAgent })
   }
 
+  const handleUnassignment = () => {
+    unassignLeadMutation.mutate(lead.id)
+  }
+
   const handleAutoAssignment = () => {
-    setIsAutoAssigning(true)
     autoAssignMutation.mutate([lead.id])
-    setIsAutoAssigning(false)
   }
 
   const calculateMatchScore = (agent: AgentCapacity): number => {
@@ -171,35 +242,109 @@ export default function LeadAssignmentPanel({ lead, onAssignmentComplete }: Lead
   }
 
   return (
-    <div className="space-y-6">
-      {/* Lead Information */}
-      <div className="card">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Lead Details</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <p className="text-sm text-gray-500">Lead Name</p>
-            <p className="font-medium">{lead.firstName} {lead.lastName}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-500">Property Type</p>
-            <p className="font-medium">{lead.propertyType}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-500">Location</p>
-            <p className="font-medium flex items-center">
-              <MapPinIcon className="w-4 h-4 mr-1" />
-              {lead.preferredLocation}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-500">Lead Score</p>
-            <p className="font-medium flex items-center">
-              <TrophyIcon className="w-4 h-4 mr-1 text-yellow-500" />
-              {lead.leadScore}/100
-            </p>
-          </div>
-        </div>
-      </div>
+    <Transition show={isOpen} as={React.Fragment}>
+      <Dialog as="div" className="relative z-50" onClose={onClose}>
+        <Transition.Child
+          as={React.Fragment}
+          enter="ease-out duration-300"
+          enterFrom="opacity-0"
+          enterTo="opacity-100"
+          leave="ease-in duration-200"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
+        >
+          <div className="fixed inset-0 bg-black bg-opacity-25" />
+        </Transition.Child>
+
+        <div className="fixed inset-0 overflow-y-auto">
+          <div className="flex min-h-full items-center justify-center p-4 text-center">
+            <Transition.Child
+              as={React.Fragment}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0 scale-95"
+              enterTo="opacity-100 scale-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100 scale-100"
+              leaveTo="opacity-0 scale-95"
+            >
+              <Dialog.Panel className="w-full max-w-4xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+                <div className="flex justify-between items-center mb-6">
+                  <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900">
+                    Assign Lead: {lead.firstName} {lead.lastName}
+                  </Dialog.Title>
+                  <button
+                    type="button"
+                    className="rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                    onClick={onClose}
+                  >
+                    <span className="sr-only">Close</span>
+                    <XMarkIcon className="h-6 w-6" aria-hidden="true" />
+                  </button>
+                </div>
+
+                <div className="space-y-6">
+                  {/* Lead Information */}
+                  <div className="card">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Lead Details</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-gray-500">Lead Name</p>
+                        <p className="font-medium">{lead.firstName} {lead.lastName}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Property Type</p>
+                        <p className="font-medium">{lead.propertyType}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Location</p>
+                        <p className="font-medium flex items-center">
+                          <MapPinIcon className="w-4 h-4 mr-1" />
+                          {lead.preferredLocation}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Lead Score</p>
+                        <p className="font-medium flex items-center">
+                          <TrophyIcon className="w-4 h-4 mr-1 text-yellow-500" />
+                          {lead.leadScore}/100
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Current Assignment Status */}
+                  <div className="card">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900">Current Assignment</h3>
+                      {lead.assignedUserName && (
+                        <button
+                          onClick={handleUnassignment}
+                          disabled={unassignLeadMutation.isPending}
+                          className="flex items-center px-3 py-2 text-sm font-medium text-red-700 bg-red-100 border border-red-300 rounded-md hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <UserMinusIcon className="w-4 h-4 mr-1" />
+                          {unassignLeadMutation.isPending ? 'Unassigning...' : 'Unassign'}
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex items-center">
+                      <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center mr-3">
+                        <UserIcon className="w-5 h-5 text-gray-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          {lead.assignedUserName || 'Unassigned'}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          Status: <span className={`font-medium ${
+                            lead.assignedUserName ? 'text-green-600' : 'text-yellow-600'
+                          }`}>
+                            {lead.assignedUserName ? 'Assigned' : 'Awaiting Assignment'}
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
 
       {/* Auto-Assignment */}
       <div className="card">
@@ -210,10 +355,10 @@ export default function LeadAssignmentPanel({ lead, onAssignmentComplete }: Lead
           </div>
           <button
             onClick={handleAutoAssignment}
-            disabled={isAutoAssigning || autoAssignMutation.isPending}
+            disabled={autoAssignMutation.isPending}
             className="btn-primary"
           >
-            {isAutoAssigning ? 'Assigning...' : 'Auto-Assign'}
+            {autoAssignMutation.isPending ? 'Assigning...' : 'Auto-Assign'}
           </button>
         </div>
         <p className="text-sm text-gray-600">
@@ -359,6 +504,12 @@ export default function LeadAssignmentPanel({ lead, onAssignmentComplete }: Lead
           </div>
         </div>
       </div>
-    </div>
+                </div>
+              </Dialog.Panel>
+            </Transition.Child>
+          </div>
+        </div>
+      </Dialog>
+    </Transition>
   )
 }

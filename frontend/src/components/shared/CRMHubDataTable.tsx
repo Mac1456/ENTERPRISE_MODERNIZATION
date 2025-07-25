@@ -31,6 +31,7 @@ interface CRMHubDataTableProps {
   loading?: boolean
   title?: string
   actions?: React.ReactNode
+  onRowClick?: (row: any) => void
 }
 
 const StatusBadge = ({ status, type = 'default' }: { status: string, type?: string }) => {
@@ -69,7 +70,8 @@ export default function CRMHubDataTable({
   pagination, 
   loading, 
   title,
-  actions 
+  actions,
+  onRowClick 
 }: CRMHubDataTableProps) {
   if (loading) {
     return (
@@ -129,7 +131,8 @@ export default function CRMHubDataTable({
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
-                className="hover:bg-gray-50 transition-colors"
+                className={`hover:bg-gray-50 transition-colors ${onRowClick ? 'cursor-pointer' : ''}`}
+                onClick={() => onRowClick?.(row)}
               >
                 <td className="px-6 py-4">
                   <input 

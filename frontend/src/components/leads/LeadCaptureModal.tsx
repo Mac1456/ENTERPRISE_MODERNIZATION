@@ -34,6 +34,7 @@ const leadSchema = z.object({
 interface LeadCaptureModalProps {
   isOpen: boolean
   onClose: () => void
+  onLeadCaptured?: () => void
   initialData?: Partial<LeadCaptureForm>
 }
 
@@ -64,7 +65,7 @@ const leadSources = [
   'Other'
 ]
 
-export default function LeadCaptureModal({ isOpen, onClose, initialData }: LeadCaptureModalProps) {
+export default function LeadCaptureModal({ isOpen, onClose, onLeadCaptured, initialData }: LeadCaptureModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const queryClient = useQueryClient()
 
@@ -99,6 +100,7 @@ export default function LeadCaptureModal({ isOpen, onClose, initialData }: LeadC
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })
       toast.success(`Lead "${newLead.firstName} ${newLead.lastName}" created successfully!`)
       reset()
+      onLeadCaptured?.()
       onClose()
     },
     onError: (error: any) => {

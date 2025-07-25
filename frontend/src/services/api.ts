@@ -7,12 +7,12 @@ class ApiService {
 
   constructor() {
     this.client = axios.create({
-      baseURL: 'http://localhost:8080/api.php?path=',
+      baseURL: 'http://localhost:8080/custom/modernui/api.php',
       timeout: 10000,
       headers: {
         'Content-Type': 'application/json',
       },
-      withCredentials: true
+      withCredentials: false // Changed to false to avoid CORS issues
     })
 
     // Request interceptor to add auth token

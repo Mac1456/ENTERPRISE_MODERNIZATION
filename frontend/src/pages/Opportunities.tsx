@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import { Opportunity, SalesStage, TransactionMilestone } from '../types'
 import CRMHubDataTable from '../components/shared/CRMHubDataTable'
+import OpportunityModal from '../components/opportunities/OpportunityModal'
+import MilestoneModal from '../components/opportunities/MilestoneModal'
 import { apiService } from '../services/api'
+import toast from 'react-hot-toast'
 import { 
   PlusIcon, 
   FunnelIcon, 
@@ -31,6 +34,10 @@ const Opportunities: React.FC<OpportunitiesProps> = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [editingOpportunity, setEditingOpportunity] = useState<Opportunity | null>(null)
+  const [selectedMilestone, setSelectedMilestone] = useState<TransactionMilestone | null>(null)
+  const [isMilestoneModalOpen, setIsMilestoneModalOpen] = useState(false)
   const [filterStage, setFilterStage] = useState<SalesStage | 'all'>('all')
   const [filterType, setFilterType] = useState<'all' | 'Sale' | 'Purchase' | 'Lease' | 'Rental'>('all')
 
@@ -53,6 +60,155 @@ const Opportunities: React.FC<OpportunitiesProps> = () => {
 
   const handleOpportunityClick = (opportunity: Opportunity) => {
     setSelectedOpportunity(opportunity)
+  }
+
+  const handleOpportunityUpdate = (updatedOpportunity: Opportunity) => {
+    setOpportunities(prev => 
+      prev.map(opp => opp.id === updatedOpportunity.id ? updatedOpportunity : opp)
+    )
+    setSelectedOpportunity(updatedOpportunity)
+  }
+
+  const handleOpportunityCreate = (newOpportunity: Opportunity) => {
+    setOpportunities(prev => [newOpportunity, ...prev])
+  }
+
+  const handleEditOpportunity = (opportunity: Opportunity) => {
+    setEditingOpportunity(opportunity)
+    setIsEditModalOpen(true)
+  }
+
+  const handleUpdateStage = async (opportunityId: string, newStage: SalesStage) => {
+    try {
+      const opportunity = opportunities.find(o => o.id === opportunityId)
+      if (!opportunity) return
+
+      const stageProbabilities = {
+        'Prospecting': 10,
+        'Qualification': 25,
+        'Proposal': 50,
+        'Negotiation': 75,
+        'Closed Won': 100,
+        'Closed Lost': 0
+      }
+
+      const updatedOpportunity = {
+        ...opportunity,
+        salesStage: newStage,
+        probability: stageProbabilities[newStage]
+      }
+
+      const response = await apiService.put<{success: boolean, data: Opportunity}>(`/opportunities/${opportunityId}`, updatedOpportunity)
+      
+      setOpportunities(prev => 
+        prev.map(opp => opp.id === opportunityId ? response.data : opp)
+      )
+      
+      if (selectedOpportunity?.id === opportunityId) {
+        setSelectedOpportunity(response.data)
+      }
+      
+      toast.success(`Deal stage updated to ${newStage}`)
+    } catch (error) {
+      console.error('Error updating stage:', error)
+      toast.error('Failed to update deal stage')
+    }
+  }
+
+  const handleMilestoneUpdate = async (milestoneId: string, completed: boolean) => {
+    try {
+      if (!selectedOpportunity) return
+
+      const updatedMilestones = selectedOpportunity.milestones?.map(milestone => 
+        milestone.id === milestoneId 
+          ? { ...milestone, completed, completedDate: completed ? new Date().toISOString() : undefined }
+          : milestone
+      ) || []
+
+      const updatedOpportunity = {
+        ...selectedOpportunity,
+        milestones: updatedMilestones
+      }
+
+      const response = await apiService.put<{success: boolean, data: Opportunity}>(`/opportunities/${selectedOpportunity.id}`, updatedOpportunity)
+      
+      setOpportunities(prev => 
+        prev.map(opp => opp.id === selectedOpportunity.id ? response.data : opp)
+      )
+      
+      setSelectedOpportunity(response.data)
+      
+      toast.success(completed ? 'Milestone completed' : 'Milestone reopened')
+    } catch (error) {
+      console.error('Error updating milestone:', error)
+      toast.error('Failed to update milestone')
+    }
+  }
+
+  const handleViewDocuments = (opportunity: Opportunity) => {
+    // TODO: Implement document management system
+    toast.info('Document management feature coming soon')
+  }
+
+  const handleSendForSignature = (opportunity: Opportunity) => {
+    // TODO: Implement e-signature integration
+    toast.info('E-signature integration coming soon')
+  }
+
+  const handleMilestoneCreate = async (milestoneData: Partial<TransactionMilestone>) => {
+    try {
+      if (!selectedOpportunity) return
+
+      const updatedMilestones = [...(selectedOpportunity.milestones || []), milestoneData as TransactionMilestone]
+      const updatedOpportunity = {
+        ...selectedOpportunity,
+        milestones: updatedMilestones
+      }
+
+      const response = await apiService.put<{success: boolean, data: Opportunity}>(`/opportunities/${selectedOpportunity.id}`, updatedOpportunity)
+      
+      setOpportunities(prev => 
+        prev.map(opp => opp.id === selectedOpportunity.id ? response.data : opp)
+      )
+      
+      setSelectedOpportunity(response.data)
+      
+      toast.success('Milestone created successfully')
+    } catch (error) {
+      console.error('Error creating milestone:', error)
+      toast.error('Failed to create milestone')
+    }
+  }
+
+  const handleMilestoneEdit = async (milestoneData: Partial<TransactionMilestone>) => {
+    try {
+      if (!selectedOpportunity || !selectedMilestone) return
+
+      const updatedMilestones = selectedOpportunity.milestones?.map(milestone => 
+        milestone.id === selectedMilestone.id 
+          ? { ...milestone, ...milestoneData }
+          : milestone
+      ) || []
+
+      const updatedOpportunity = {
+        ...selectedOpportunity,
+        milestones: updatedMilestones
+      }
+
+      const response = await apiService.put<{success: boolean, data: Opportunity}>(`/opportunities/${selectedOpportunity.id}`, updatedOpportunity)
+      
+      setOpportunities(prev => 
+        prev.map(opp => opp.id === selectedOpportunity.id ? response.data : opp)
+      )
+      
+      setSelectedOpportunity(response.data)
+      setSelectedMilestone(null)
+      
+      toast.success('Milestone updated successfully')
+    } catch (error) {
+      console.error('Error updating milestone:', error)
+      toast.error('Failed to update milestone')
+    }
   }
 
   const getSalesStageStyle = (stage: SalesStage) => {
@@ -328,6 +484,7 @@ const Opportunities: React.FC<OpportunitiesProps> = () => {
                   data={filteredOpportunities}
                   columns={columns}
                   loading={loading}
+                  onRowClick={handleOpportunityClick}
                 />
               </div>
             </div>
@@ -339,10 +496,47 @@ const Opportunities: React.FC<OpportunitiesProps> = () => {
               opportunity={selectedOpportunity}
               onClose={() => setSelectedOpportunity(null)}
               onUpdate={() => fetchOpportunities()}
+              onEdit={handleEditOpportunity}
+              onMilestoneUpdate={handleMilestoneUpdate}
+              onViewDocuments={handleViewDocuments}
+              onSendForSignature={handleSendForSignature}
+              onStageUpdate={handleUpdateStage}
+              onMilestoneCreate={() => setIsMilestoneModalOpen(true)}
+              onMilestoneEdit={(milestone) => {
+                setSelectedMilestone(milestone)
+                setIsMilestoneModalOpen(true)
+              }}
             />
           )}
         </div>
       </div>
+
+      {/* Modals */}
+      <OpportunityModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSave={handleOpportunityCreate}
+      />
+
+      <OpportunityModal
+        isOpen={isEditModalOpen}
+        opportunity={editingOpportunity}
+        onClose={() => {
+          setIsEditModalOpen(false)
+          setEditingOpportunity(null)
+        }}
+        onSave={handleOpportunityUpdate}
+      />
+
+      <MilestoneModal
+        isOpen={isMilestoneModalOpen}
+        milestone={selectedMilestone}
+        onClose={() => {
+          setIsMilestoneModalOpen(false)
+          setSelectedMilestone(null)
+        }}
+        onSave={selectedMilestone ? handleMilestoneEdit : handleMilestoneCreate}
+      />
     </>
   )
 }
@@ -352,7 +546,14 @@ const TransactionDetailPanel: React.FC<{
   opportunity: Opportunity
   onClose: () => void
   onUpdate: () => void
-}> = ({ opportunity, onClose, onUpdate }) => {
+  onEdit: (opportunity: Opportunity) => void
+  onMilestoneUpdate: (milestoneId: string, completed: boolean) => void
+  onViewDocuments: (opportunity: Opportunity) => void
+  onSendForSignature: (opportunity: Opportunity) => void
+  onStageUpdate: (opportunityId: string, newStage: SalesStage) => void
+  onMilestoneCreate: () => void
+  onMilestoneEdit: (milestone: TransactionMilestone) => void
+}> = ({ opportunity, onClose, onUpdate, onEdit, onMilestoneUpdate, onViewDocuments, onSendForSignature, onStageUpdate, onMilestoneCreate, onMilestoneEdit }) => {
   const [selectedMilestone, setSelectedMilestone] = useState<TransactionMilestone | null>(null)
 
   const getNextMilestone = (milestones: TransactionMilestone[]) => {
@@ -499,7 +700,16 @@ const TransactionDetailPanel: React.FC<{
 
           {/* All Milestones */}
           <div>
-            <h5 className="text-sm font-medium text-gray-900 mb-3">Transaction Milestones</h5>
+            <div className="flex items-center justify-between mb-3">
+              <h5 className="text-sm font-medium text-gray-900">Transaction Milestones</h5>
+              <button
+                onClick={onMilestoneCreate}
+                className="text-xs text-blue-600 hover:text-blue-800 flex items-center space-x-1"
+              >
+                <PlusIcon className="h-3 w-3" />
+                <span>Add Milestone</span>
+              </button>
+            </div>
             <div className="space-y-3">
               {opportunity.milestones?.map((milestone, index) => {
                 const status = getMilestoneStatus(milestone)
@@ -515,15 +725,21 @@ const TransactionDetailPanel: React.FC<{
                         ? 'border-yellow-200 bg-yellow-50'
                         : 'border-gray-200 bg-gray-50'
                     }`}
-                    onClick={() => setSelectedMilestone(milestone)}
+                    onClick={() => onMilestoneUpdate(milestone.id, !milestone.completed)}
+                    onDoubleClick={() => onMilestoneEdit(milestone)}
                   >
                     <div className="flex items-start space-x-3">
                       {getMilestoneIcon(status)}
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
-                          <h6 className="font-medium">{milestone.name}</h6>
-                          <span className="text-xs text-gray-500">#{index + 1}</span>
-                        </div>
+                        <h6 className="font-medium">{milestone.name}</h6>
+                        <div className="flex items-center space-x-2">
+                            <span className="text-xs text-gray-500">#{index + 1}</span>
+                             <span className="text-xs text-blue-600 hover:text-blue-800">
+                             {milestone.completed ? 'Click to reopen • Double-click to edit' : 'Click to complete • Double-click to edit'}
+                             </span>
+                           </div>
+                         </div>
                         <p className="text-sm text-gray-600 mt-1">{milestone.description}</p>
                         <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
                           <span>Due: {new Date(milestone.dueDate).toLocaleDateString()}</span>
@@ -565,14 +781,43 @@ const TransactionDetailPanel: React.FC<{
 
         {/* Actions */}
         <div className="px-6 py-4 border-t border-gray-200 space-y-2">
-          <button className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <button 
+            onClick={() => onEdit(opportunity)}
+            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
             Update Deal
           </button>
+          
+          {/* Stage Progression */}
+          {opportunity.salesStage !== 'Closed Won' && opportunity.salesStage !== 'Closed Lost' && (
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">Quick Stage Update:</label>
+              <select
+                value={opportunity.salesStage}
+                onChange={(e) => onStageUpdate(opportunity.id, e.target.value as SalesStage)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
+              >
+                <option value="Prospecting">Prospecting</option>
+                <option value="Qualification">Qualification</option>
+                <option value="Proposal">Proposal</option>
+                <option value="Negotiation">Negotiation</option>
+                <option value="Closed Won">Closed Won</option>
+                <option value="Closed Lost">Closed Lost</option>
+              </select>
+            </div>
+          )}
+          
           <div className="grid grid-cols-2 gap-2">
-            <button className="bg-gray-100 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500">
+            <button 
+              onClick={() => onViewDocuments(opportunity)}
+              className="bg-gray-100 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
+            >
               View Documents
             </button>
-            <button className="bg-gray-100 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500">
+            <button 
+              onClick={() => onSendForSignature(opportunity)}
+              className="bg-gray-100 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
+            >
               Send for Signature
             </button>
           </div>

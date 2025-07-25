@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react'
-import { Account, Contact } from '../types'
+import { Account, Contact, Opportunity } from '../types'
 import CRMHubDataTable from '../components/shared/CRMHubDataTable'
+import AccountModal from '../components/accounts/AccountModal'
+import OpportunityModal from '../components/opportunities/OpportunityModal'
 import { apiService } from '../services/api'
 import { 
   PlusIcon, 
@@ -16,7 +18,8 @@ import {
   DocumentTextIcon,
   UserIcon,
   GlobeAmericasIcon,
-  BanknotesIcon
+  BanknotesIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline'
 
 interface AccountsProps {}
@@ -27,6 +30,10 @@ const Accounts: React.FC<AccountsProps> = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isOpportunityModalOpen, setIsOpportunityModalOpen] = useState(false)
+  const [showContactsList, setShowContactsList] = useState(false)
+  const [accountContacts, setAccountContacts] = useState<Contact[]>([])
   const [filterType, setFilterType] = useState<'all' | 'Customer' | 'Prospect' | 'Partner' | 'Investor'>('all')
 
   useEffect(() => {
@@ -50,7 +57,36 @@ const Accounts: React.FC<AccountsProps> = () => {
     setSelectedAccount(account)
   }
 
+  const handleAccountSave = (account: Account) => {
+    if (selectedAccount && selectedAccount.id === account.id) {
+      setSelectedAccount(account)
+    }
+    fetchAccounts() // Refresh the list
+  }
 
+  const handleEditAccount = () => {
+    setIsEditModalOpen(true)
+  }
+
+  const handleViewContacts = async (accountId: string) => {
+    try {
+      const response = await apiService.get<{success: boolean, data: Contact[]}>(`/contacts?accountId=${accountId}`)
+      setAccountContacts(response.data || [])
+      setShowContactsList(true)
+    } catch (error) {
+      console.error('Error fetching contacts:', error)
+      setAccountContacts([])
+      setShowContactsList(true)
+    }
+  }
+
+  const handleNewOpportunity = () => {
+    setIsOpportunityModalOpen(true)
+  }
+
+  const handleOpportunitySave = (opportunity: Opportunity) => {
+    fetchAccounts() // Refresh accounts to update opportunity count/value
+  }
 
   const filteredAccounts = accounts.filter(account => {
     const matchesSearch = account.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -284,6 +320,9 @@ const Accounts: React.FC<AccountsProps> = () => {
                 account={selectedAccount}
                 onClose={() => setSelectedAccount(null)}
                 onUpdate={() => fetchAccounts()}
+                onEdit={handleEditAccount}
+                onViewContacts={handleViewContacts}
+                onNewOpportunity={handleNewOpportunity}
               />
             </div>
           )}
@@ -298,7 +337,97 @@ const Accounts: React.FC<AccountsProps> = () => {
               account={selectedAccount}
               onClose={() => setSelectedAccount(null)}
               onUpdate={() => fetchAccounts()}
+              onEdit={handleEditAccount}
+              onViewContacts={handleViewContacts}
+              onNewOpportunity={handleNewOpportunity}
             />
+          </div>
+        </div>
+      )}
+
+      {/* Modals */}
+      <AccountModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSave={handleAccountSave}
+      />
+
+      <AccountModal
+        account={selectedAccount}
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onSave={handleAccountSave}
+      />
+
+      <OpportunityModal
+        accountId={selectedAccount?.id}
+        isOpen={isOpportunityModalOpen}
+        onClose={() => setIsOpportunityModalOpen(false)}
+        onSave={handleOpportunitySave}
+      />
+
+      {/* Contacts List Modal */}
+      {showContactsList && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex min-h-screen items-center justify-center p-4">
+            <div className="fixed inset-0 bg-black opacity-50" onClick={() => setShowContactsList(false)}></div>
+            <div className="relative bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90%] overflow-y-auto">
+              <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Contacts - {selectedAccount?.name}
+                </h3>
+                <button
+                  onClick={() => setShowContactsList(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <XMarkIcon className="h-6 w-6" />
+                </button>
+              </div>
+              <div className="p-6">
+                {accountContacts.length > 0 ? (
+                  <div className="space-y-4">
+                    {accountContacts.map(contact => (
+                      <div key={contact.id} className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="text-lg font-medium text-gray-900">
+                              {contact.firstName} {contact.lastName}
+                            </h4>
+                            <div className="mt-2 space-y-1">
+                              <div className="flex items-center space-x-2">
+                                <EnvelopeIcon className="h-4 w-4 text-gray-400" />
+                                <span className="text-sm text-gray-600">{contact.email}</span>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <PhoneIcon className="h-4 w-4 text-gray-400" />
+                                <span className="text-sm text-gray-600">{contact.phone}</span>
+                              </div>
+                              {contact.title && (
+                                <div className="flex items-center space-x-2">
+                                  <UserIcon className="h-4 w-4 text-gray-400" />
+                                  <span className="text-sm text-gray-600">{contact.title}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            Assigned to: {contact.assignedUserName}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <UserIcon className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">No contacts</h3>
+                    <p className="mt-1 text-sm text-gray-500">
+                      No contacts are associated with this account yet.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -342,7 +471,10 @@ const AccountDetailPanel: React.FC<{
   account: Account
   onClose: () => void
   onUpdate: () => void
-}> = ({ account, onClose, onUpdate }) => {
+  onEdit: () => void
+  onViewContacts: (accountId: string) => void
+  onNewOpportunity: () => void
+}> = ({ account, onClose, onUpdate, onEdit, onViewContacts, onNewOpportunity }) => {
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-lg h-fit xl:sticky xl:top-8">
       <div className="flex flex-col max-h-[calc(100vh-4rem)] xl:max-h-[calc(100vh-8rem)]">
@@ -489,14 +621,23 @@ const AccountDetailPanel: React.FC<{
 
         {/* Actions */}
         <div className="px-6 py-4 border-t border-gray-200 space-y-3 bg-gray-50 rounded-b-xl">
-          <button className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-base transition-colors">
+          <button 
+            onClick={onEdit}
+            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-base transition-colors"
+          >
             Edit Account
           </button>
           <div className="grid grid-cols-2 gap-3">
-            <button className="bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 font-medium text-sm transition-colors">
+            <button 
+              onClick={() => onViewContacts(account.id)}
+              className="bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 font-medium text-sm transition-colors"
+            >
               View Contacts
             </button>
-            <button className="bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 font-medium text-sm transition-colors">
+            <button 
+              onClick={onNewOpportunity}
+              className="bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 font-medium text-sm transition-colors"
+            >
               New Opportunity
             </button>
           </div>

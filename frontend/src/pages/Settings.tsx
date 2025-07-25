@@ -17,9 +17,11 @@ import {
   DocumentTextIcon,
   UserGroupIcon,
   CheckIcon,
-  XMarkIcon
+  XMarkIcon,
+  BoltIcon
 } from '@heroicons/react/24/outline'
 import { useAuthStore } from '../store/authStore'
+import AssignmentRulesSettings from '../components/settings/AssignmentRulesSettings_Simple'
 
 interface SettingsProps {}
 
@@ -72,6 +74,7 @@ const Settings: React.FC<SettingsProps> = () => {
     { id: 'notifications', name: 'Notifications', icon: BellIcon },
     { id: 'security', name: 'Security', icon: ShieldCheckIcon },
     { id: 'system', name: 'System', icon: CogIcon },
+    { id: 'lead-assignment', name: 'Lead Assignment', icon: BoltIcon },
     { id: 'integrations', name: 'Integrations', icon: CloudIcon },
     { id: 'appearance', name: 'Appearance', icon: PaintBrushIcon }
   ]
@@ -91,6 +94,20 @@ const Settings: React.FC<SettingsProps> = () => {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleIntegrationToggle = async (integrationId: string) => {
+    try {
+      // Simulate API call to toggle integration
+      await new Promise(resolve => setTimeout(resolve, 500))
+      alert(`Integration ${integrationId} toggled successfully!`)
+    } catch (error) {
+      alert('Error toggling integration. Please try again.')
+    }
+  }
+
+  const handleCompactModeToggle = () => {
+    alert('Compact mode toggle functionality coming soon!')
   }
 
   const renderProfileTab = () => (
@@ -463,6 +480,7 @@ const Settings: React.FC<SettingsProps> = () => {
                   {integration.connected ? 'Connected' : 'Not Connected'}
                 </span>
                 <button
+                  onClick={() => handleIntegrationToggle(integration.id)}
                   className={`px-4 py-2 rounded-md text-sm font-medium ${
                     integration.connected
                       ? 'bg-red-100 text-red-700 hover:bg-red-200'
@@ -520,7 +538,10 @@ const Settings: React.FC<SettingsProps> = () => {
               <div className="text-sm font-medium text-gray-900">Compact Mode</div>
               <div className="text-sm text-gray-500">Use more compact spacing throughout the interface</div>
             </div>
-            <button className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-gray-200 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+            <button 
+              onClick={() => handleCompactModeToggle()}
+              className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-gray-200 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
               <span className="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out translate-x-0" />
             </button>
           </div>
@@ -593,6 +614,7 @@ const Settings: React.FC<SettingsProps> = () => {
               {activeTab === 'notifications' && renderNotificationsTab()}
               {activeTab === 'security' && renderSecurityTab()}
               {activeTab === 'system' && renderSystemTab()}
+              {activeTab === 'lead-assignment' && <AssignmentRulesSettings />}
               {activeTab === 'integrations' && renderIntegrationsTab()}
               {activeTab === 'appearance' && renderAppearanceTab()}
             </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Activity, ActivityType } from '../types'
 import CRMHubDataTable from '../components/shared/CRMHubDataTable'
+import ActivityModal from '../components/activities/ActivityModal'
 import { apiService } from '../services/api'
 import { 
   PlusIcon, 
@@ -30,6 +31,8 @@ const Activities: React.FC<ActivitiesProps> = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [editingActivity, setEditingActivity] = useState<Activity | null>(null)
   const [filterType, setFilterType] = useState<ActivityType | 'all'>('all')
   const [filterStatus, setFilterStatus] = useState<'all' | 'Completed' | 'Pending' | 'In Progress'>('all')
 
@@ -52,6 +55,47 @@ const Activities: React.FC<ActivitiesProps> = () => {
 
   const handleActivityClick = (activity: Activity) => {
     setSelectedActivity(activity)
+  }
+
+  const handleEditActivity = (activity: Activity) => {
+    setEditingActivity(activity)
+    setIsEditModalOpen(true)
+  }
+
+  const handleDuplicateActivity = async (activity: Activity) => {
+    try {
+      const duplicatedActivity = {
+        ...activity,
+        id: `activity-${Date.now()}`,
+        subject: `${activity.subject} (Copy)`,
+        status: 'Pending',
+        dateCreated: new Date().toISOString()
+      }
+      await apiService.post('/activities', duplicatedActivity)
+      fetchActivities()
+      alert('Activity duplicated successfully!')
+    } catch (error) {
+      console.error('Error duplicating activity:', error)
+      alert('Error duplicating activity. Please try again.')
+    }
+  }
+
+  const handleDeleteActivity = async (activity: Activity) => {
+    if (window.confirm('Are you sure you want to delete this activity?')) {
+      try {
+        await apiService.delete(`/activities/${activity.id}`)
+        fetchActivities()
+        setSelectedActivity(null)
+        alert('Activity deleted successfully!')
+      } catch (error) {
+        console.error('Error deleting activity:', error)
+        alert('Error deleting activity. Please try again.')
+      }
+    }
+  }
+
+  const handleSaveActivity = (activity: Activity) => {
+    fetchActivities()
   }
 
   const getActivityTypeIcon = (type: ActivityType) => {
@@ -368,6 +412,23 @@ const Activities: React.FC<ActivitiesProps> = () => {
           )}
         </div>
       </div>
+
+      {/* Activity Modals */}
+      <ActivityModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSave={handleSaveActivity}
+      />
+
+      <ActivityModal
+        activity={editingActivity}
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false)
+          setEditingActivity(null)
+        }}
+        onSave={handleSaveActivity}
+      />
     </>
   )
 }
@@ -545,14 +606,23 @@ const ActivityDetailPanel: React.FC<{
               {isCompleting ? 'Completing...' : 'Mark Complete'}
             </button>
           )}
-          <button className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <button 
+            onClick={() => handleEditActivity(activity)}
+            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
             Edit Activity
           </button>
           <div className="grid grid-cols-2 gap-2">
-            <button className="bg-gray-100 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500">
+            <button 
+              onClick={() => handleDuplicateActivity(activity)}
+              className="bg-gray-100 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
+            >
               Duplicate
             </button>
-            <button className="bg-red-100 text-red-700 py-2 px-4 rounded-md hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500">
+            <button 
+              onClick={() => handleDeleteActivity(activity)}
+              className="bg-red-100 text-red-700 py-2 px-4 rounded-md hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500"
+            >
               Delete
             </button>
           </div>

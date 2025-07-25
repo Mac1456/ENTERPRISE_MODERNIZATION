@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { CalendarEvent, EventType } from '../types'
+import EventModal from '../components/calendar/EventModal'
 import { apiService } from '../services/api'
 import { 
   PlusIcon, 
@@ -25,6 +26,9 @@ const Calendar: React.FC<CalendarProps> = () => {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null)
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [viewType, setViewType] = useState<'month' | 'week' | 'day'>('month')
   const [filterType, setFilterType] = useState<EventType | 'all'>('all')
 
@@ -45,7 +49,51 @@ const Calendar: React.FC<CalendarProps> = () => {
     }
   }
 
+  const handleEditEvent = (event: CalendarEvent) => {
+    setEditingEvent(event)
+    setIsEditModalOpen(true)
+  }
 
+  const handleDuplicateEvent = async (event: CalendarEvent) => {
+    try {
+      const duplicatedEvent = {
+        ...event,
+        id: `event-${Date.now()}`,
+        title: `${event.title} (Copy)`,
+        startDate: new Date(new Date(event.startDate).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(), // Next week
+        endDate: event.endDate ? new Date(new Date(event.endDate).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString() : undefined
+      }
+      await apiService.post('/calendar/events', duplicatedEvent)
+      fetchEvents()
+      alert('Event duplicated successfully!')
+    } catch (error) {
+      console.error('Error duplicating event:', error)
+      alert('Error duplicating event. Please try again.')
+    }
+  }
+
+  const handleDeleteEvent = async (event: CalendarEvent) => {
+    if (window.confirm('Are you sure you want to delete this event?')) {
+      try {
+        await apiService.delete(`/calendar/events/${event.id}`)
+        fetchEvents()
+        setSelectedEvent(null)
+        alert('Event deleted successfully!')
+      } catch (error) {
+        console.error('Error deleting event:', error)
+        alert('Error deleting event. Please try again.')
+      }
+    }
+  }
+
+  const handleSaveEvent = (event: CalendarEvent) => {
+    fetchEvents()
+  }
+
+  const handleDayClick = (date: Date) => {
+    setSelectedDate(date)
+    setIsCreateModalOpen(true)
+  }
 
   const filteredEvents = events.filter(event => {
     const eventDate = new Date(event.startDate)
@@ -162,7 +210,8 @@ const Calendar: React.FC<CalendarProps> = () => {
                   return (
                     <div
                       key={day.toISOString()}
-                      className={`min-h-[140px] lg:min-h-[160px] p-3 border-b border-gray-200 transition-colors hover:bg-gray-50 ${
+                      onClick={() => handleDayClick(day)}
+                      className={`min-h-[140px] lg:min-h-[160px] p-3 border-b border-gray-200 transition-colors hover:bg-gray-50 cursor-pointer ${
                         !isCurrentMonth ? 'bg-gray-50 text-gray-400' : 'bg-white'
                       }`}
                     >
@@ -324,6 +373,27 @@ const Calendar: React.FC<CalendarProps> = () => {
           />
         </div>
       )}
+
+      {/* Event Modals */}
+      <EventModal
+        isOpen={isCreateModalOpen}
+        selectedDate={selectedDate}
+        onClose={() => {
+          setIsCreateModalOpen(false)
+          setSelectedDate(null)
+        }}
+        onSave={handleSaveEvent}
+      />
+
+      <EventModal
+        event={editingEvent}
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false)
+          setEditingEvent(null)
+        }}
+        onSave={handleSaveEvent}
+      />
     </>
   )
 }
@@ -511,14 +581,23 @@ const EventDetailPanel: React.FC<{
 
         {/* Actions */}
         <div className="px-6 py-4 border-t border-gray-200 space-y-2">
-          <button className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <button 
+            onClick={() => handleEditEvent(event)}
+            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
             Edit Event
           </button>
           <div className="grid grid-cols-2 gap-2">
-            <button className="bg-gray-100 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500">
+            <button 
+              onClick={() => handleDuplicateEvent(event)}
+              className="bg-gray-100 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
+            >
               Duplicate
             </button>
-            <button className="bg-red-100 text-red-700 py-2 px-4 rounded-md hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500">
+            <button 
+              onClick={() => handleDeleteEvent(event)}
+              className="bg-red-100 text-red-700 py-2 px-4 rounded-md hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500"
+            >
               Delete
             </button>
           </div>

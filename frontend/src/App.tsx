@@ -7,7 +7,7 @@ import Layout from '@/components/layout/Layout'
 
 // Pages
 import Dashboard from '@/pages/Dashboard'
-import LeadsCRMHubStyle from '@/pages/LeadsCRMHubStyle'
+import LeadsEnhanced from '@/pages/Leads_Enhanced'
 import Contacts from '@/pages/Contacts'
 import Accounts from '@/pages/Accounts'
 import Properties from '@/pages/Properties'
@@ -62,7 +62,7 @@ function App() {
     <Layout>
       <Routes>
         <Route path="/" element={<Dashboard />} />
-        <Route path="/leads" element={<LeadsCRMHubStyle />} />
+        <Route path="/leads" element={<LeadsEnhanced />} />
         <Route path="/contacts" element={<Contacts />} />
         <Route path="/accounts" element={<Accounts />} />
         <Route path="/properties" element={<Properties />} />

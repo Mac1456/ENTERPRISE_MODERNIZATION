@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Property, PropertyType, PropertyStatus } from '../types'
 import CRMHubDataTable from '../components/shared/CRMHubDataTable'
+import PropertyModal from '../components/properties/PropertyModal'
 import { apiService } from '../services/api'
 import { 
   PlusIcon, 
@@ -28,6 +29,8 @@ const Properties: React.FC<PropertiesProps> = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [editingProperty, setEditingProperty] = useState<Property | null>(null)
   const [filterStatus, setFilterStatus] = useState<PropertyStatus | 'all'>('all')
   const [filterType, setFilterType] = useState<PropertyType | 'all'>('all')
   const [priceRange, setPriceRange] = useState<'all' | 'under500k' | '500k-1m' | 'over1m'>('all')
@@ -51,6 +54,15 @@ const Properties: React.FC<PropertiesProps> = () => {
 
   const handlePropertyClick = (property: Property) => {
     setSelectedProperty(property)
+  }
+
+  const handleEditProperty = (property: Property) => {
+    setEditingProperty(property)
+    setIsEditModalOpen(true)
+  }
+
+  const handleSaveProperty = (property: Property) => {
+    fetchProperties()
   }
 
   const getPropertyStatusStyle = (status: PropertyStatus) => {
@@ -207,12 +219,14 @@ const Properties: React.FC<PropertiesProps> = () => {
             <EyeIcon className="h-4 w-4" />
           </button>
           <button
+            onClick={() => handleEditProperty(property)}
             className="text-gray-600 hover:text-gray-800"
             title="Edit Property"
           >
             <PencilIcon className="h-4 w-4" />
           </button>
           <button
+            onClick={() => alert('Added to favorites!')}
             className="text-red-500 hover:text-red-700"
             title="Add to Favorites"
           >
@@ -354,6 +368,23 @@ const Properties: React.FC<PropertiesProps> = () => {
           onUpdate={() => fetchProperties()}
         />
       )}
+
+      {/* Property Modals */}
+      <PropertyModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSave={handleSaveProperty}
+      />
+
+      <PropertyModal
+        property={editingProperty}
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false)
+          setEditingProperty(null)
+        }}
+        onSave={handleSaveProperty}
+      />
     </div>
   )
 }
@@ -519,10 +550,16 @@ const PropertyDetailPanel: React.FC<{
 
         {/* Actions */}
         <div className="px-6 py-4 border-t border-gray-200 space-y-2">
-          <button className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <button 
+            onClick={() => handleEditProperty(property)}
+            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
             Edit Property
           </button>
-          <button className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500">
+          <button 
+            onClick={() => alert('Analytics feature coming soon!')}
+            className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
+          >
             View Analytics
           </button>
         </div>
