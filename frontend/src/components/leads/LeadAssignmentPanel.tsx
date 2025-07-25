@@ -316,7 +316,7 @@ export default function LeadAssignmentPanel({ isOpen, onClose, lead, onAssignmen
                   <div className="card">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-lg font-semibold text-gray-900">Current Assignment</h3>
-                      {lead.assignedUserName && (
+                      {lead.assignedUserName && lead.assignedUserName !== 'Unassigned' && lead.assignedUserId && (
                         <button
                           onClick={handleUnassignment}
                           disabled={unassignLeadMutation.isPending}
@@ -333,13 +333,19 @@ export default function LeadAssignmentPanel({ isOpen, onClose, lead, onAssignmen
                       </div>
                       <div>
                         <p className="font-medium text-gray-900">
-                          {lead.assignedUserName || 'Unassigned'}
+                          {lead.assignedUserName && lead.assignedUserName !== 'Unassigned' && lead.assignedUserId
+                            ? lead.assignedUserName 
+                            : 'Unassigned'}
                         </p>
                         <p className="text-sm text-gray-500">
                           Status: <span className={`font-medium ${
-                            lead.assignedUserName ? 'text-green-600' : 'text-yellow-600'
+                            lead.assignedUserName && lead.assignedUserName !== 'Unassigned' && lead.assignedUserId 
+                              ? 'text-green-600' 
+                              : 'text-yellow-600'
                           }`}>
-                            {lead.assignedUserName ? 'Assigned' : 'Awaiting Assignment'}
+                            {lead.assignedUserName && lead.assignedUserName !== 'Unassigned' && lead.assignedUserId
+                              ? 'Assigned' 
+                              : 'Awaiting Assignment'}
                           </span>
                         </p>
                       </div>
