@@ -1,0 +1,71 @@
+# Multi-stage build for PHP backend
+FROM php:8.2-fpm-alpine as base
+
+# Install system dependencies
+RUN apk add --no-cache \
+    git \
+    curl \
+    libpng-dev \
+    libxml2-dev \
+    zip \
+    unzip \
+    oniguruma-dev \
+    libzip-dev \
+    freetype-dev \
+    libjpeg-turbo-dev \
+    redis
+
+# Install PHP extensions
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install \
+        pdo_mysql \
+        mbstring \
+        exif \
+        pcntl \
+        bcmath \
+        gd \
+        zip \
+        xml
+
+# Install Redis extension
+RUN pecl install redis && docker-php-ext-enable redis
+
+# Get Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Set working directory
+WORKDIR /var/www
+
+# Copy composer files
+COPY backend/composer*.json ./
+
+# Install dependencies
+RUN composer install --no-dev --optimize-autoloader --no-scripts
+
+# Copy application code
+COPY backend/ ./
+
+# Set proper permissions
+RUN chown -R www-data:www-data /var/www \
+    && chmod -R 755 /var/www/storage
+
+# Production stage
+FROM base as production
+
+# Copy optimized vendor directory
+COPY --from=base /var/www/vendor ./vendor
+
+# Configure PHP for production
+RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
+
+# Custom PHP configuration
+COPY docker/php.ini "$PHP_INI_DIR/conf.d/custom.ini"
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:9000/ping || exit 1
+
+# Expose port
+EXPOSE 9000
+
+CMD ["php-fpm"]
