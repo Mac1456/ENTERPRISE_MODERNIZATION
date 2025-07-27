@@ -94,7 +94,7 @@ const mockLeads: Lead[] = [
     company: 'Creative Agency',
     status: 'New',
     source: 'Referral',
-    assignedUserId: null,
+    assignedUserId: undefined,
     assignedUserName: 'Unassigned',
     propertyType: 'Townhouse',
     budget: { min: 350000, max: 600000 },
@@ -111,22 +111,25 @@ export default function LeadsEnhanced() {
   const [showCaptureModal, setShowCaptureModal] = useState(false)
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
   const [showAssignmentPanel, setShowAssignmentPanel] = useState(false)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState('All Statuses')
-  const [sourceFilter, setSourceFilter] = useState('All Sources')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedStatus, setSelectedStatus] = useState('')
+  const [selectedSource, setSelectedSource] = useState('')
+  const [selectedAssignment, setSelectedAssignment] = useState('')
+  const [showFilters, setShowFilters] = useState(false)
   const [selectedLeads, setSelectedLeads] = useState<string[]>([])
   const [autoAssigning, setAutoAssigning] = useState(false)
 
   // Fetch real leads data from API
   const { data: leadsData, isLoading, refetch } = useQuery({
-    queryKey: ['leads', { searchTerm, statusFilter, sourceFilter }],
+    queryKey: ['leads', { searchTerm: searchQuery, statusFilter: selectedStatus, sourceFilter: selectedSource }],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: '1',
         limit: '50',
-        ...(searchTerm && { search: searchTerm }),
-        ...(statusFilter !== 'All Statuses' && { status: statusFilter }),
-        ...(sourceFilter !== 'All Sources' && { source: sourceFilter })
+        ...(searchQuery && { search: searchQuery }),
+        ...(selectedStatus !== '' && { status: selectedStatus }),
+        ...(selectedSource !== '' && { source: selectedSource }),
+        ...(selectedAssignment !== '' && { assignment: selectedAssignment })
       })
       
       const response = await fetch(`http://localhost:8080/custom/modernui/api.php/leads?${params}`)
@@ -183,7 +186,7 @@ export default function LeadsEnhanced() {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedLeads(leadsData?.data.map(lead => lead.id) || [])
+      setSelectedLeads(leadsData?.data.map((lead: Lead) => lead.id) || [])
     } else {
       setSelectedLeads([])
     }
@@ -222,8 +225,43 @@ export default function LeadsEnhanced() {
     }
   }
 
-  const unassignedLeads = leadsData?.data.filter(lead => !lead.assignedUserId) || []
+  const unassignedLeads = leadsData?.data.filter((lead: Lead) => !lead.assignedUserId) || []
   const hasUnassignedLeads = unassignedLeads.length > 0
+
+  // Filter leads based on search query and selected filters
+  const filteredLeads = React.useMemo(() => {
+    let filtered = leadsData?.data || []
+
+    // Apply search query filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase()
+      filtered = filtered.filter((lead: Lead) => 
+        `${lead.firstName} ${lead.lastName}`.toLowerCase().includes(query) ||
+        lead.email.toLowerCase().includes(query) ||
+        lead.phone.toLowerCase().includes(query) ||
+        lead.company?.toLowerCase().includes(query)
+      )
+    }
+
+    // Apply status filter
+    if (selectedStatus) {
+      filtered = filtered.filter((lead: Lead) => lead.status === selectedStatus)
+    }
+
+    // Apply source filter
+    if (selectedSource) {
+      filtered = filtered.filter((lead: Lead) => lead.source === selectedSource)
+    }
+
+    // Apply assignment filter
+    if (selectedAssignment === 'assigned') {
+      filtered = filtered.filter((lead: Lead) => lead.assignedUserId)
+    } else if (selectedAssignment === 'unassigned') {
+      filtered = filtered.filter((lead: Lead) => !lead.assignedUserId)
+    }
+
+    return filtered
+  }, [leadsData?.data, searchQuery, selectedStatus, selectedSource, selectedAssignment])
 
   if (isLoading) {
     return (
@@ -242,19 +280,19 @@ export default function LeadsEnhanced() {
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       {/* Page header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Leads</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Leads</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">
             Manage and nurture your real estate leads with intelligent assignment
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
           {selectedLeads.length > 0 && (
             <Button
               onClick={handleAutoAssign}
               disabled={autoAssigning}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
             >
               {autoAssigning ? (
                 <>
@@ -269,7 +307,7 @@ export default function LeadsEnhanced() {
               )}
             </Button>
           )}
-          <Button onClick={() => setShowCaptureModal(true)}>
+          <Button onClick={() => setShowCaptureModal(true)} className="w-full sm:w-auto">
             <PlusIcon className="w-4 h-4 mr-2" />
             Capture Lead
           </Button>
@@ -278,7 +316,7 @@ export default function LeadsEnhanced() {
 
       {/* Auto-assignment alert */}
       {hasUnassignedLeads && (
-        <Alert>
+        <Alert className="mx-4 sm:mx-0">
           <BoltIcon className="h-4 w-4" />
           <AlertDescription>
             You have {unassignedLeads.length} unassigned lead{unassignedLeads.length > 1 ? 's' : ''}. 
@@ -288,37 +326,37 @@ export default function LeadsEnhanced() {
       )}
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Leads</CardTitle>
+            <CardTitle className="text-xs sm:text-sm font-medium">Total Leads</CardTitle>
             <UserPlusIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{leadsData?.data.length || 0}</div>
+            <div className="text-xl sm:text-2xl font-bold">{leadsData?.data.length || 0}</div>
             <p className="text-xs text-muted-foreground">Active in pipeline</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Unassigned</CardTitle>
+            <CardTitle className="text-xs sm:text-sm font-medium">Unassigned</CardTitle>
             <EllipsisVerticalIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{unassignedLeads.length}</div>
+            <div className="text-xl sm:text-2xl font-bold text-orange-600">{unassignedLeads.length}</div>
             <p className="text-xs text-muted-foreground">Awaiting assignment</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">High Score</CardTitle>
+            <CardTitle className="text-xs sm:text-sm font-medium">High Score</CardTitle>
             <TrophyIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {leadsData?.data.filter(lead => lead.leadScore >= 80).length || 0}
+            <div className="text-xl sm:text-2xl font-bold text-green-600">
+              {leadsData?.data.filter((lead: Lead) => lead.leadScore >= 80).length || 0}
             </div>
             <p className="text-xs text-muted-foreground">Score 80+ leads</p>
           </CardContent>
@@ -326,13 +364,13 @@ export default function LeadsEnhanced() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Score</CardTitle>
+            <CardTitle className="text-xs sm:text-sm font-medium">Avg Score</CardTitle>
             <TrophyIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-xl sm:text-2xl font-bold">
               {leadsData?.data.length 
-                ? Math.round(leadsData.data.reduce((sum, lead) => sum + lead.leadScore, 0) / leadsData.data.length)
+                ? Math.round(leadsData.data.reduce((sum: number, lead: Lead) => sum + lead.leadScore, 0) / leadsData.data.length)
                 : 0
               }
             </div>
@@ -348,203 +386,194 @@ export default function LeadsEnhanced() {
           <input
             type="text"
             placeholder="Search leads..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
-        
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        >
-          <option>All Statuses</option>
-          <option>New</option>
-          <option>Assigned</option>
-          <option>Qualified</option>
-          <option>Contacted</option>
-          <option>Converted</option>
-        </select>
-
-        <select
-          value={sourceFilter}
-          onChange={(e) => setSourceFilter(e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        >
-          <option>All Sources</option>
-          <option>Website</option>
-          <option>Zillow</option>
-          <option>Realtor.com</option>
-          <option>Referral</option>
-          <option>Social Media</option>
-        </select>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex-shrink-0"
+          >
+            <FunnelIcon className="w-4 h-4 mr-2" />
+            Filters
+          </Button>
+          <select
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-w-[120px]"
+          >
+            <option value="">All Status</option>
+            <option value="New">New</option>
+            <option value="Qualified">Qualified</option>
+            <option value="Contacted">Contacted</option>
+            <option value="Converted">Converted</option>
+          </select>
+        </div>
       </div>
 
-      {/* Leads Table */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Lead Management</CardTitle>
-            {leadsData?.data && leadsData.data.length > 0 && (
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  checked={selectedLeads.length === leadsData.data.length}
-                  onCheckedChange={handleSelectAll}
-                />
-                <span className="text-sm text-muted-foreground">
-                  Select All ({selectedLeads.length} selected)
-                </span>
-              </div>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {leadsData?.data.map((lead) => (
-              <motion.div
-                key={lead.id}
-                className="border rounded-lg p-4 hover:bg-gray-50 transition-colors cursor-pointer"
-                whileHover={{ scale: 1.01 }}
-                onClick={() => handleAssignLead(lead)}
+      {/* Enhanced filters panel */}
+      {showFilters && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          exit={{ opacity: 0, height: 0 }}
+          className="bg-gray-50 p-4 rounded-lg border"
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Source</label>
+              <select 
+                value={selectedSource}
+                onChange={(e) => setSelectedSource(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-4">
-                    <Checkbox
-                      checked={selectedLeads.includes(lead.id)}
-                      onCheckedChange={(checked) => handleSelectLead(lead.id, checked as boolean)}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-semibold text-gray-900">
-                          {lead.firstName} {lead.lastName}
-                        </h3>
-                        <Badge variant={
-                          lead.status === 'New' ? 'default' : 
-                          lead.status === 'Assigned' ? 'secondary' : 
-                          lead.status === 'Qualified' ? 'secondary' : 
-                          'outline'
-                        }>
-                          {lead.status}
-                        </Badge>
-                        <Badge variant={getScoreBadgeVariant(lead.leadScore)}>
-                          Score: {lead.leadScore}
-                        </Badge>
-                        {!lead.assignedUserId && (
-                          <Badge variant="outline" className="text-orange-600 border-orange-600">
-                            Unassigned
-                          </Badge>
-                        )}
-                      </div>
+                <option value="">All Sources</option>
+                <option value="Website">Website</option>
+                <option value="Zillow">Zillow</option>
+                <option value="Referral">Referral</option>
+                <option value="Social Media">Social Media</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Assignment</label>
+              <select 
+                value={selectedAssignment}
+                onChange={(e) => setSelectedAssignment(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">All Leads</option>
+                <option value="assigned">Assigned</option>
+                <option value="unassigned">Unassigned</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Property Type</label>
+              <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <option value="">All Types</option>
+                <option value="Single Family">Single Family</option>
+                <option value="Condo">Condo</option>
+                <option value="Townhouse">Townhouse</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Lead Score</label>
+              <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <option value="">All Scores</option>
+                <option value="high">High (80+)</option>
+                <option value="medium">Medium (60-79)</option>
+                <option value="low">Low (Below 60)</option>
+              </select>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-gray-600">
-                        <div className="flex items-center gap-2">
-                          <EnvelopeIcon className="w-4 h-4" />
-                          <span>{lead.email}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <PhoneIcon className="w-4 h-4" />
-                          <span>{lead.phone}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <MapPinIcon className="w-4 h-4" />
-                          <span>{lead.preferredLocation}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CalendarIcon className="w-4 h-4" />
-                          <span>{lead.timeline}</span>
-                        </div>
-                      </div>
-
-                      <div className="mt-3 flex items-center gap-4 text-sm">
-                        <span><strong>Budget:</strong> {formatCurrency(lead.budget.min)} - {formatCurrency(lead.budget.max)}</span>
-                        <span><strong>Property:</strong> {lead.propertyType}</span>
-                        <span><strong>Source:</strong> {lead.source}</span>
-                        {lead.assignedUserName && lead.assignedUserName !== 'Unassigned' && (
-                          <span><strong>Assigned to:</strong> {lead.assignedUserName}</span>
-                        )}
-                      </div>
-
-                      <div className="mt-2 text-xs text-gray-500">
-                        Created {formatDistanceToNow(new Date(lead.createdAt), { addSuffix: true })} • 
-                        Last updated {formatDistanceToNow(new Date(lead.modifiedAt), { addSuffix: true })}
-                      </div>
-                    </div>
-                  </div>
-
-                  <Menu as="div" className="relative">
-                    <Menu.Button 
-                      className="flex items-center p-2 text-gray-400 hover:text-gray-600"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <EllipsisVerticalIcon className="w-5 h-5" />
-                    </Menu.Button>
-                    <Menu.Items className="absolute right-0 z-10 mt-2 w-48 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-                      <div className="py-1">
-                        <Menu.Item>
-                          {({ active }) => (
-                            <button
-                              onClick={() => handleAssignLead(lead)}
-                              className={`${
-                                active ? 'bg-gray-100' : ''
-                              } block w-full text-left px-4 py-2 text-sm text-gray-700`}
-                            >
-                              <UserPlusIcon className="w-4 h-4 inline mr-2" />
-                              {lead.assignedUserId ? 'Reassign' : 'Assign'} Lead
-                            </button>
-                          )}
-                        </Menu.Item>
-                        <Menu.Item>
-                          {({ active }) => (
-                            <button
-                              className={`${
-                                active ? 'bg-gray-100' : ''
-                              } block w-full text-left px-4 py-2 text-sm text-gray-700`}
-                            >
-                              <PhoneIcon className="w-4 h-4 inline mr-2" />
-                              Call Lead
-                            </button>
-                          )}
-                        </Menu.Item>
-                        <Menu.Item>
-                          {({ active }) => (
-                            <button
-                              className={`${
-                                active ? 'bg-gray-100' : ''
-                              } block w-full text-left px-4 py-2 text-sm text-gray-700`}
-                            >
-                              <EnvelopeIcon className="w-4 h-4 inline mr-2" />
-                              Send Email
-                            </button>
-                          )}
-                        </Menu.Item>
-                      </div>
-                    </Menu.Items>
-                  </Menu>
+      {/* Data Table */}
+      <CRMHubDataTable
+        columns={[
+          { 
+            key: 'name', 
+            title: 'Name',
+            mobileLabel: 'Name',
+            render: (_, row) => (
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                  <span className="text-sm font-medium text-blue-600">
+                    {row.firstName?.[0]}{row.lastName?.[0]}
+                  </span>
                 </div>
-              </motion.div>
-            ))}
-
-            {(!leadsData?.data || leadsData.data.length === 0) && (
-              <div className="text-center py-12">
-                <UserPlusIcon className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="mt-2 text-sm font-medium text-gray-900">No leads found</h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  Get started by capturing your first lead.
-                </p>
-                <div className="mt-6">
-                  <Button onClick={() => setShowCaptureModal(true)}>
-                    <PlusIcon className="w-4 h-4 mr-2" />
-                    Capture Lead
-                  </Button>
+                <div>
+                  <div className="font-medium text-gray-900">
+                    {row.firstName} {row.lastName}
+                  </div>
+                  <div className="text-sm text-gray-500 flex items-center">
+                    <EnvelopeIcon className="w-3 h-3 mr-1" />
+                    {row.email}
+                  </div>
                 </div>
               </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+            )
+          },
+          { 
+            key: 'status', 
+            title: 'Status',
+            mobileLabel: 'Status'
+          },
+          { 
+            key: 'phone', 
+            title: 'Phone',
+            mobileLabel: 'Phone',
+            render: (phone) => (
+              <div className="flex items-center text-sm text-gray-600">
+                <PhoneIcon className="w-3 h-3 mr-1" />
+                {phone}
+              </div>
+            )
+          },
+          { 
+            key: 'source', 
+            title: 'Source',
+            mobileLabel: 'Source'
+          },
+          { 
+            key: 'assignedUserName', 
+            title: 'Assigned To',
+            mobileLabel: 'Assigned',
+            render: (assignedUserName, row) => (
+              <div>
+                {row.assignedUserId ? (
+                  <span className="text-sm text-gray-900">{assignedUserName}</span>
+                ) : (
+                  <span className="text-sm text-orange-600 font-medium">Unassigned</span>
+                )}
+              </div>
+            )
+          },
+          { 
+            key: 'leadScore', 
+            title: 'Score',
+            mobileLabel: 'Score',
+            render: (score) => (
+              <div className="flex items-center">
+                <div className={`text-sm font-medium ${
+                  score >= 80 ? 'text-green-600' : 
+                  score >= 60 ? 'text-yellow-600' : 'text-red-600'
+                }`}>
+                  {score}
+                </div>
+                <TrophyIcon className={`w-3 h-3 ml-1 ${
+                  score >= 80 ? 'text-green-600' : 
+                  score >= 60 ? 'text-yellow-600' : 'text-red-600'
+                }`} />
+              </div>
+            )
+          },
+          { 
+            key: 'createdAt', 
+            title: 'Created',
+            mobileLabel: 'Created',
+            render: (createdAt) => (
+              <div className="text-sm text-gray-500">
+                {formatDistanceToNow(new Date(createdAt), { addSuffix: true })}
+              </div>
+            )
+          }
+        ]}
+        data={filteredLeads}
+        pagination={{
+          currentPage: 1,
+          totalPages: Math.ceil(filteredLeads.length / 10),
+          total: filteredLeads.length,
+          onPageChange: (page) => console.log('Page changed:', page)
+        }}
+        onRowClick={(lead) => {
+          setSelectedLead(lead)
+          setShowAssignmentPanel(true)
+        }}
+      />
 
       {/* Modals */}
       {showCaptureModal && (

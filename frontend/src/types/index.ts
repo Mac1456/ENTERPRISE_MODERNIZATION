@@ -51,7 +51,7 @@ export interface Lead {
   description?: string
   status: LeadStatus
   source: string
-  assignedUserId: string
+  assignedUserId?: string
   assignedUserName: string
   // Real estate specific fields
   propertyType: PropertyType
