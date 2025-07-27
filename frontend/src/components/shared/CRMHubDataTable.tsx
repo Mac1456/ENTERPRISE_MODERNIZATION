@@ -76,15 +76,15 @@ const MobileCard = ({ row, columns, onRowClick }: { row: TableRow, columns: Tabl
     >
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1">
-          {/* Primary information (first 2 columns typically) */}
-          {columns.slice(0, 2).map((column) => (
+          {/* Primary information (skip select column, show next 2 columns) */}
+          {columns.filter(col => col.key !== 'select').slice(0, 2).map((column) => (
             <div key={column.key} className="mb-1">
               {column.render ? (
                 column.render(row[column.key], row)
               ) : column.key === 'status' ? (
                 <StatusBadge status={row[column.key]} />
               ) : (
-                <span className={`${column.key === columns[0].key ? 'font-semibold text-gray-900' : 'text-gray-600 text-sm'}`}>
+                <span className={`${column.key === columns.filter(col => col.key !== 'select')[0].key ? 'font-semibold text-gray-900' : 'text-gray-600 text-sm'}`}>
                   {row[column.key]}
                 </span>
               )}
@@ -96,9 +96,9 @@ const MobileCard = ({ row, columns, onRowClick }: { row: TableRow, columns: Tabl
         </button>
       </div>
       
-      {/* Secondary information grid */}
+      {/* Secondary information grid (skip select column) */}
       <div className="grid grid-cols-2 gap-3">
-        {columns.slice(2).map((column) => (
+        {columns.filter(col => col.key !== 'select').slice(2).map((column) => (
           <div key={column.key} className="text-sm">
             <div className="text-gray-500 text-xs uppercase tracking-wide mb-1">
               {column.mobileLabel || column.title}

@@ -49,24 +49,48 @@ export class LeadService {
   }
 
   // Assign lead to user
-  static async assignLead(id: string, userId: string): Promise<Lead> {
-    return apiService.patch<ApiResponse<Lead>>(`/leads/${id}/assign`, { userId })
-      .then(response => response.data)
+  static async assignLead(id: string, userId: string): Promise<any> {
+    const response = await fetch(`http://localhost:8080/custom/modernui/api.php/leads/${id}/assign`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId })
+    })
+    const result = await response.json()
+    if (!result.success) {
+      throw new Error(result.message || 'Assignment failed')
+    }
+    return result.data
   }
 
   // Unassign lead from current user
-  static async unassignLead(id: string): Promise<Lead> {
-    return apiService.patch<ApiResponse<Lead>>(`/leads/${id}/assign`, { userId: 'unassign' })
-      .then(response => response.data)
+  static async unassignLead(id: string): Promise<any> {
+    const response = await fetch(`http://localhost:8080/custom/modernui/api.php/leads/${id}/assign`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: 'unassign' })
+    })
+    const result = await response.json()
+    if (!result.success) {
+      throw new Error(result.message || 'Unassignment failed')
+    }
+    return result.data
   }
 
   // Auto-assign leads based on rules
   static async autoAssignLeads(leadIds: string[]): Promise<{
-    assigned: { leadId: string, userId: string }[]
+    assigned: { leadId: string, userId: string, userName: string }[]
     failed: string[]
   }> {
-    return apiService.post<ApiResponse<any>>('/leads/auto-assign', { leadIds })
-      .then(response => response.data)
+    const response = await fetch('http://localhost:8080/custom/modernui/api.php/leads/auto-assign', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ leadIds })
+    })
+    const result = await response.json()
+    if (!result.success) {
+      throw new Error(result.message || 'Auto-assignment failed')
+    }
+    return result.data
   }
 
   // Update lead score
@@ -113,8 +137,16 @@ export class LeadService {
     deleted: string[]
     failed: string[]
   }> {
-    return apiService.delete<ApiResponse<any>>('/leads/bulk-delete', { data: { leadIds } })
-      .then(response => response.data)
+    const response = await fetch('http://localhost:8080/custom/modernui/api.php/leads/bulk-delete', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ leadIds })
+    })
+    const result = await response.json()
+    if (!result.success) {
+      throw new Error(result.message || 'Bulk delete failed')
+    }
+    return result.data
   }
 
   // Lead analytics

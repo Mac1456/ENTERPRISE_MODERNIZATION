@@ -22,7 +22,7 @@ interface LeadAssignmentPanelProps {
   isOpen: boolean
   onClose: () => void
   lead: Lead
-  onAssignmentComplete: () => void
+  onAssignmentComplete: (userId: string | null) => void
 }
 
 interface AgentCapacity {
@@ -130,10 +130,10 @@ export default function LeadAssignmentPanel({ isOpen, onClose, lead, onAssignmen
   const assignLeadMutation = useMutation({
     mutationFn: ({ leadId, userId }: { leadId: string, userId: string }) =>
       LeadService.assignLead(leadId, userId),
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['leads'] })
       toast.success(data.message || 'Lead assigned successfully!')
-      onAssignmentComplete()
+      onAssignmentComplete(variables.userId)
     },
     onError: (error: any) => {
       console.error('Assignment error:', error)
@@ -160,7 +160,7 @@ export default function LeadAssignmentPanel({ isOpen, onClose, lead, onAssignmen
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['leads'] })
       toast.success(data.message || 'Lead unassigned successfully!')
-      onAssignmentComplete()
+      onAssignmentComplete(null)
     },
     onError: (error: any) => {
       console.error('Unassign error:', error)
@@ -176,7 +176,7 @@ export default function LeadAssignmentPanel({ isOpen, onClose, lead, onAssignmen
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['leads'] })
       toast.success('Lead auto-assigned successfully!')
-      onAssignmentComplete()
+      onAssignmentComplete('auto-assigned')
     },
     onError: (error: any) => {
       console.error('Auto-assignment error:', error)
