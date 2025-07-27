@@ -14,10 +14,18 @@ import {
   PhoneIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline'
+import { useLeadCount } from '@/hooks/useLeadCount'
 
-const navigation = [
+interface NavigationItem {
+  name: string
+  href: string
+  icon: React.ComponentType<{ className?: string }>
+  badge?: string | number | null
+}
+
+const navigation: NavigationItem[] = [
   { name: 'Dashboard', href: '/', icon: HomeIcon },
-  { name: 'Leads', href: '/leads', icon: UserPlusIcon, badge: 5 },
+  { name: 'Leads', href: '/leads', icon: UserPlusIcon }, // Badge will be added dynamically
   { name: 'Contacts', href: '/contacts', icon: UsersIcon },
   { name: 'Accounts', href: '/accounts', icon: BuildingOffice2Icon },
   { name: 'Properties', href: '/properties', icon: BuildingOffice2Icon },
@@ -27,7 +35,7 @@ const navigation = [
   { name: 'Activities', href: '/activities', icon: PhoneIcon },
 ]
 
-const secondaryNavigation = [
+const secondaryNavigation: NavigationItem[] = [
   { name: 'Settings', href: '/settings', icon: CogIcon },
 ]
 
@@ -38,6 +46,18 @@ interface SidebarProps {
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation()
+  const { formattedCount: leadBadgeCount } = useLeadCount()
+
+  // Add dynamic badge to leads navigation item
+  const enhancedNavigation: NavigationItem[] = navigation.map(item => {
+    if (item.name === 'Leads') {
+      return {
+        ...item,
+        badge: leadBadgeCount
+      }
+    }
+    return item
+  })
 
   return (
     <>
@@ -62,7 +82,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             <ul role="list" className="flex flex-1 flex-col gap-y-7">
               <li>
                 <ul role="list" className="-mx-2 space-y-1">
-                  {navigation.map((item) => {
+                  {enhancedNavigation.map((item) => {
                     const isActive = location.pathname === item.href
                     return (
                       <li key={item.name}>
@@ -196,7 +216,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     <ul role="list" className="flex flex-1 flex-col gap-y-7">
                       <li>
                         <ul role="list" className="-mx-2 space-y-1">
-                          {navigation.map((item) => {
+                          {enhancedNavigation.map((item) => {
                             const isActive = location.pathname === item.href
                             return (
                               <li key={item.name}>
