@@ -215,6 +215,8 @@ if (strpos($apiPath, '/leads') === 0) {
     handleDashboardStats();
 } elseif (strpos($apiPath, '/properties') === 0) {
     handleProperties($method);
+} elseif (strpos($apiPath, '/users') === 0) {
+    handleUsers($method);
 } else {
     http_response_code(404);
     echo json_encode(['error' => 'Endpoint not found']);
@@ -424,6 +426,43 @@ function handleProperties($method) {
         'success' => true,
         'data' => [],
         'pagination' => ['page' => 1, 'limit' => 10, 'total' => 0, 'pages' => 1]
+    ]);
+}
+
+function handleUsers($method) {
+    // Return mock user data for agent assignment
+    echo json_encode([
+        'success' => true,
+        'data' => [
+            [
+                'id' => 'agent1',
+                'name' => 'Sarah Johnson',
+                'email' => 'sarah.johnson@company.com',
+                'role' => 'Senior Agent',
+                'active' => true
+            ],
+            [
+                'id' => 'agent2', 
+                'name' => 'Mike Chen',
+                'email' => 'mike.chen@company.com',
+                'role' => 'Lead Agent',
+                'active' => true
+            ],
+            [
+                'id' => 'agent3',
+                'name' => 'Lisa Rodriguez', 
+                'email' => 'lisa.rodriguez@company.com',
+                'role' => 'Agent',
+                'active' => true
+            ],
+            [
+                'id' => 'agent4',
+                'name' => 'David Kim',
+                'email' => 'david.kim@company.com', 
+                'role' => 'Agent',
+                'active' => true
+            ]
+        ]
     ]);
 }
 
