@@ -23,7 +23,8 @@ import {
   TrophyIcon,
   EllipsisVerticalIcon,
   BoltIcon,
-  CheckIcon
+  CheckIcon,
+  UsersIcon
 } from '@heroicons/react/24/outline'
 import { Menu } from '@headlessui/react'
 import { formatDistanceToNow } from 'date-fns'
@@ -471,8 +472,31 @@ export default function LeadsEnhanced() {
         </motion.div>
       )}
 
-      {/* Data Table */}
-      <CRMHubDataTable
+      {/* Conditional rendering: Empty State or Data Table */}
+      {filteredLeads.length === 0 ? (
+        /* Empty State */
+        <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
+          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-gray-100 mb-4">
+            <UsersIcon className="h-6 w-6 text-gray-400" />
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No leads found</h3>
+          <p className="text-gray-500 mb-6">
+            {searchQuery || selectedStatus || selectedSource || selectedAssignment
+              ? 'Try adjusting your filters to see more leads.'
+              : 'Get started by capturing your first lead.'
+            }
+          </p>
+          <button
+            onClick={() => setShowCaptureModal(true)}
+            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+          >
+            <PlusIcon className="w-4 h-4 mr-2" />
+            Capture Lead
+          </button>
+        </div>
+      ) : (
+        /* Data Table */
+        <CRMHubDataTable
         columns={[
           { 
             key: 'name', 
@@ -574,6 +598,7 @@ export default function LeadsEnhanced() {
           setShowAssignmentPanel(true)
         }}
       />
+      )}
 
       {/* Modals */}
       {showCaptureModal && (
