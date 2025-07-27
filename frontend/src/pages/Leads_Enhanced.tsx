@@ -1,3 +1,13 @@
+/**
+ * ✅ ACTIVE COMPONENT - PRIMARY LEADS PAGE
+ * 
+ * This is the MAIN leads page currently used in production.
+ * Route: /leads (see App.tsx line 10, 57)
+ * Status: ACTIVE - This is the primary leads implementation
+ * 
+ * DO NOT MODIFY without testing the /leads route!
+ */
+
 import React, { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'

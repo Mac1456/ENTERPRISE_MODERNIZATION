@@ -1,4 +1,16 @@
 import React, { useState, useEffect } from 'react'
+/**
+ * ⚠️ POTENTIALLY UNUSED - FULL ASSIGNMENT RULES SETTINGS
+ * 
+ * Status: UNCLEAR - This full version is NOT imported anywhere
+ * Purpose: Comprehensive assignment rules with advanced features
+ * 
+ * NOTE: Settings.tsx uses AssignmentRulesSettings_Simple.tsx instead!
+ * This appears to be a more complex version that was replaced by the Simple version.
+ * 
+ * ACTIVE VERSION: Use AssignmentRulesSettings_Simple.tsx instead
+ */
+
 import { LeadService } from '@/services/leadService'
 import { 
   MapPinIcon, 

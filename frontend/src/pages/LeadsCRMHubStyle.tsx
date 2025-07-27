@@ -1,3 +1,15 @@
+/**
+ * ⚠️ POTENTIALLY UNUSED - LEADS CRM HUB STYLE VERSION
+ * 
+ * Status: UNCLEAR - No imports or routes found for this component
+ * Purpose: Alternative leads implementation with CRM Hub styling
+ * 
+ * This appears to be an alternative implementation that may not be actively used.
+ * Check before modifying - may be part of development evolution.
+ * 
+ * ACTIVE VERSION: Use Leads_Enhanced.tsx instead (see /leads route)
+ */
+
 import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'

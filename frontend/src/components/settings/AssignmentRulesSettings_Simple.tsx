@@ -1,4 +1,14 @@
 import React, { useState, useEffect } from 'react'
+/**
+ * ✅ ACTIVE COMPONENT - ASSIGNMENT RULES SETTINGS (SIMPLE VERSION)
+ * 
+ * This is the ACTIVE assignment rules component used in production.
+ * Import: Settings.tsx line 23
+ * Status: ACTIVE - This is the current implementation (NOT the full version)
+ * 
+ * Note: There's also AssignmentRulesSettings.tsx but THIS Simple version is used!
+ */
+
 import { LeadService } from '@/services/leadService'
 import { 
   MapPinIcon, 

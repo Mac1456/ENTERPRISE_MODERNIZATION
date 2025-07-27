@@ -1,14 +1,3 @@
-/**
- * ✅ ACTIVE COMPONENT - LEADS (TESTED VERSION)
- * 
- * This component is ACTIVELY TESTED with 352 lines of comprehensive tests.
- * Tests: __tests__/Leads.test.tsx (352 lines of test coverage)
- * Status: ACTIVE - Required for test suite, extensively tested implementation
- * 
- * Note: While Leads_Enhanced.tsx is the main route, THIS version has full test coverage!
- * DO NOT REMOVE - Required for testing infrastructure!
- */
-
 import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
