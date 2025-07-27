@@ -49,15 +49,27 @@ if (in_array($method, ['POST', 'PUT', 'PATCH'])) {
     $input = json_decode($rawInput, true) ?: [];
 }
 
-// Simple file-based assignment storage
-$assignmentFile = __DIR__ . '/assignments.json';
+// Use SuiteCRM's cache directory for assignments storage
+function getAssignmentFile() {
+    // Use SuiteCRM's cache directory which should be writable
+    $cacheDir = dirname(__FILE__) . '/../../cache/';
+    if (!is_dir($cacheDir)) {
+        $cacheDir = '/tmp/'; // Fallback to tmp if cache dir doesn't exist
+    }
+    return $cacheDir . 'lead_assignments.json';
+}
 
 function loadAssignments() {
-    global $assignmentFile;
-    if (file_exists($assignmentFile)) {
+    $assignmentFile = getAssignmentFile();
+    if (file_exists($assignmentFile) && is_readable($assignmentFile)) {
         $content = file_get_contents($assignmentFile);
-        return json_decode($content, true) ?: [];
+        $assignments = json_decode($content, true);
+        if ($assignments) {
+            return $assignments;
+        }
     }
+    
+    // Default assignments
     return [
         '1' => null,
         '2' => ['userId' => 'agent2', 'userName' => 'Mike Chen'],
@@ -68,8 +80,16 @@ function loadAssignments() {
 }
 
 function saveAssignments($assignments) {
-    global $assignmentFile;
-    file_put_contents($assignmentFile, json_encode($assignments, JSON_PRETTY_PRINT));
+    $assignmentFile = getAssignmentFile();
+    $success = file_put_contents($assignmentFile, json_encode($assignments, JSON_PRETTY_PRINT));
+    
+    // Log if save failed for debugging
+    if ($success === false) {
+        error_log("Failed to save assignments to: " . $assignmentFile);
+        error_log("Directory writable: " . (is_writable(dirname($assignmentFile)) ? 'yes' : 'no'));
+    }
+    
+    return $success !== false;
 }
 
 // Load assignments for this request
@@ -249,32 +269,50 @@ function handleSingleLead($method, $leadId, $input) {
                     'userId' => $selectedUserId,
                     'userName' => $selectedUserName
                 ];
-                saveAssignments($lead_assignments);
                 
-                echo json_encode([
-                    'success' => true,
-                    'message' => 'Lead assigned successfully',
-                    'data' => [
-                        'id' => $leadId,
-                        'assignedUserId' => $selectedUserId,
-                        'assignedUserName' => $selectedUserName
-                    ]
-                ]);
+                $saveSuccess = saveAssignments($lead_assignments);
+                
+                if ($saveSuccess) {
+                    echo json_encode([
+                        'success' => true,
+                        'message' => 'Lead assigned successfully',
+                        'data' => [
+                            'id' => $leadId,
+                            'assignedUserId' => $selectedUserId,
+                            'assignedUserName' => $selectedUserName
+                        ]
+                    ]);
+                } else {
+                    echo json_encode([
+                        'success' => false,
+                        'message' => 'Assignment failed - could not save to storage',
+                        'error' => 'STORAGE_ERROR'
+                    ]);
+                }
             } else {
                 // Unassign lead
                 $lead_assignments = loadAssignments();
                 $lead_assignments[$leadId] = null;
-                saveAssignments($lead_assignments);
                 
-                echo json_encode([
-                    'success' => true,
-                    'message' => 'Lead unassigned successfully',
-                    'data' => [
-                        'id' => $leadId,
-                        'assignedUserId' => null,
-                        'assignedUserName' => 'Unassigned'
-                    ]
-                ]);
+                $saveSuccess = saveAssignments($lead_assignments);
+                
+                if ($saveSuccess) {
+                    echo json_encode([
+                        'success' => true,
+                        'message' => 'Lead unassigned successfully',
+                        'data' => [
+                            'id' => $leadId,
+                            'assignedUserId' => null,
+                            'assignedUserName' => 'Unassigned'
+                        ]
+                    ]);
+                } else {
+                    echo json_encode([
+                        'success' => false,
+                        'message' => 'Unassignment failed - could not save to storage',
+                        'error' => 'STORAGE_ERROR'
+                    ]);
+                }
             }
             return;
         }
