@@ -1,0 +1,9 @@
+total 24
+drwxr-xr-x@   3 m.chaudheri  staff     96 Jul 27 05:09 _archive
+drwxr-xr-x@   8 m.chaudheri  staff    256 Jul 27 05:09 .
+drwxr-xr-x@  20 m.chaudheri  staff    640 Jul 27 03:50 ..
+-rw-r--r--@   1 m.chaudheri  staff    513 Jul 27 03:50 .eslintrc.js
+-rw-r--r--@   1 m.chaudheri  staff    105 Jul 27 03:50 dev.log
+drwxr-xr-x@  10 m.chaudheri  staff    320 Jul 27 03:50 dist
+-rw-r--r--@   1 m.chaudheri  staff    722 Jul 27 03:50 index.html
+drwxr-xr-x@ 429 m.chaudheri  staff  13728 Jul 27 03:50 node_modules
