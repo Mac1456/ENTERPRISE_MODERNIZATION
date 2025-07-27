@@ -231,7 +231,15 @@ function handleSingleLead($method, $leadId, $input) {
             if (!empty($input['userId']) && $input['userId'] !== 'unassign') {
                 // Assign to specific user
                 $selectedUserId = $input['userId'];
-                $selectedUserName = 'Agent ' . substr($selectedUserId, -4); // Simple naming
+                
+                // Use proper agent names
+                $agentNames = [
+                    'agent1' => 'Sarah Johnson',
+                    'agent2' => 'Mike Chen',
+                    'agent3' => 'Lisa Rodriguez',
+                    'agent4' => 'David Kim'
+                ];
+                $selectedUserName = $agentNames[$selectedUserId] ?? ('Agent ' . substr($selectedUserId, -4));
                 
                 // UPDATE THE ASSIGNMENTS
                 $lead_assignments = loadAssignments();

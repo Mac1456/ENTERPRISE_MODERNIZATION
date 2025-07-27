@@ -123,8 +123,7 @@ export default function LeadsEnhanced() {
   const [isAllSelected, setIsAllSelected] = useState(false)
   const [showBulkActions, setShowBulkActions] = useState(false)
 
-  // NEW: Client-side assignment state for immediate testing
-  const [clientAssignments, setClientAssignments] = useState<Record<string, { userId: string; userName: string } | null>>({})
+
 
   // Fetch real leads data from API
   const { data: leadsData, isLoading, refetch } = useQuery({
@@ -204,73 +203,33 @@ export default function LeadsEnhanced() {
     }
   }
 
-  // NEW: Handle assignment locally for immediate feedback
-  const handleLocalAssignment = async (leadId: string, userId: string | null) => {
-    if (userId && userId !== 'unassign') {
-      // Use proper agent names instead of generic ones
-      const agentNames: Record<string, string> = {
-        'agent1': 'Sarah Johnson',
-        'agent2': 'Mike Chen',
-        'agent3': 'Lisa Rodriguez',
-        'agent4': 'David Kim'
-      }
-      const userName = agentNames[userId] || `Agent ${userId.slice(-4)}`
-      
-      setClientAssignments(prev => ({
-        ...prev,
-        [leadId]: { userId, userName }
-      }))
-      toast.success(`Lead assigned to ${userName}`)
-    } else {
-      setClientAssignments(prev => ({
-        ...prev,
-        [leadId]: null
-      }))
-      toast.success('Lead unassigned successfully')
-    }
-    
-    // Also try the API call in the background
-    try {
-      await fetch(`http://localhost:8080/custom/modernui/api.php/leads/${leadId}/assign`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: userId || 'unassign' })
-      })
-    } catch (error) {
-      console.log('API call failed, but using local assignment:', error)
-    }
-  }
 
-  // NEW: Auto-assign selected leads locally
+
+  // NEW: Auto-assign selected leads via API
   const handleAutoAssignSelected = async () => {
     if (selectedLeadIds.length === 0) return
     
-    const agents = ['agent1', 'agent2', 'agent3', 'agent4']
-    const agentNames = ['Sarah Johnson', 'Mike Chen', 'Lisa Rodriguez', 'David Kim']
-    
-    const newAssignments = { ...clientAssignments }
-    selectedLeadIds.forEach((leadId, index) => {
-      const agentIndex = index % agents.length
-      newAssignments[leadId] = {
-        userId: agents[agentIndex],
-        userName: agentNames[agentIndex]
-      }
-    })
-    
-    setClientAssignments(newAssignments)
-    toast.success(`${selectedLeadIds.length} leads assigned successfully`)
-    setSelectedLeadIds([])
-    setIsAllSelected(false)
-    
-    // Also try the API call in the background
     try {
-      await fetch('http://localhost:8080/custom/modernui/api.php/leads/auto-assign', {
+      const response = await fetch('http://localhost:8080/custom/modernui/api.php/leads/auto-assign', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ leadIds: selectedLeadIds })
       })
+      
+      const result = await response.json()
+      
+      if (result.success) {
+        toast.success(`${selectedLeadIds.length} leads assigned successfully`)
+        setSelectedLeadIds([])
+        setIsAllSelected(false)
+        // Refetch data to get updated assignments from API
+        refetch()
+      } else {
+        toast.error(result.message || 'Failed to assign leads')
+      }
     } catch (error) {
-      console.log('API call failed, but using local assignment:', error)
+      console.error('Auto-assign failed:', error)
+      toast.error('Failed to assign leads')
     }
   }
 
@@ -281,31 +240,22 @@ export default function LeadsEnhanced() {
   }
 
   const handleAssignmentComplete = (leadId: string, userId: string | null) => {
-    handleLocalAssignment(leadId, userId)
+    // Instead of using local assignment, refetch data to get the proper API response
+    refetch()
     setShowAssignmentPanel(false)
     setSelectedLead(null)
+    
+    // Show success toast
+    if (userId && userId !== 'unassign') {
+      toast.success('Lead assigned successfully!')
+    } else {
+      toast.success('Lead unassigned successfully!')
+    }
   }
 
-    // Update filtered leads logic with client-side assignments
+    // Update filtered leads logic
   const filteredLeads = React.useMemo(() => {
-    let filtered = (leadsData?.data || []).map((lead: Lead) => {
-      // Apply client-side assignments
-      const clientAssignment = clientAssignments[lead.id]
-      if (clientAssignment) {
-        return {
-          ...lead,
-          assignedUserId: clientAssignment.userId,
-          assignedUserName: clientAssignment.userName
-        }
-      } else if (clientAssignments[lead.id] === null) {
-        return {
-          ...lead,
-          assignedUserId: null,
-          assignedUserName: 'Unassigned'
-        }
-      }
-      return lead
-    })
+    let filtered = leadsData?.data || []
 
     if (searchQuery) {
       filtered = filtered.filter((lead: Lead) =>
@@ -332,7 +282,7 @@ export default function LeadsEnhanced() {
     }
 
     return filtered
-  }, [leadsData?.data, clientAssignments, searchQuery, selectedStatus, selectedSource, selectedAssignment])
+  }, [leadsData?.data, searchQuery, selectedStatus, selectedSource, selectedAssignment])
 
   // Update selection state when filtered leads change
   React.useEffect(() => {
