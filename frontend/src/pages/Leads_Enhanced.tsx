@@ -207,7 +207,15 @@ export default function LeadsEnhanced() {
   // NEW: Handle assignment locally for immediate feedback
   const handleLocalAssignment = async (leadId: string, userId: string | null) => {
     if (userId && userId !== 'unassign') {
-      const userName = `Agent ${userId.slice(-4)}`
+      // Use proper agent names instead of generic ones
+      const agentNames: Record<string, string> = {
+        'agent1': 'Sarah Johnson',
+        'agent2': 'Mike Chen',
+        'agent3': 'Lisa Rodriguez',
+        'agent4': 'David Kim'
+      }
+      const userName = agentNames[userId] || `Agent ${userId.slice(-4)}`
+      
       setClientAssignments(prev => ({
         ...prev,
         [leadId]: { userId, userName }
@@ -546,30 +554,26 @@ export default function LeadsEnhanced() {
         </motion.div>
       )}
 
-      {/* Debug Info */}
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
-        <div className="text-sm">
-          <strong>Debug Info:</strong> Selected IDs: [{selectedLeadIds.join(', ')}] | 
-          Show Bulk Actions: {showBulkActions.toString()} | 
-          Filtered Leads: {filteredLeads.length}
-        </div>
-      </div>
+
 
       {/* Bulk Actions Bar */}
       {(showBulkActions || selectedLeadIds.length > 0) && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <Checkbox
-                checked={isAllSelected}
-                onCheckedChange={handleSelectAll}
-                className="w-4 h-4 text-blue-600 mr-3"
-              />
               <span className="text-sm font-medium text-blue-900">
                 {selectedLeadIds.length} of {filteredLeads.length} leads selected
               </span>
             </div>
             <div className="flex gap-2">
+              <Button
+                onClick={() => handleSelectAll(true)}
+                variant="outline"
+                size="sm"
+                className="text-sm"
+              >
+                Select All
+              </Button>
               <Button
                 onClick={handleAutoAssignSelected}
                 disabled={selectedLeadIds.length === 0}
