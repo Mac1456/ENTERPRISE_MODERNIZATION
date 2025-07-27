@@ -132,7 +132,17 @@ export default function LeadAssignmentPanel({ isOpen, onClose, lead, onAssignmen
       LeadService.assignLead(leadId, userId),
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['leads'] })
-      toast.success(data.message || 'Lead assigned successfully!')
+      
+      // Use proper agent names for toast and callback
+      const agentNames: Record<string, string> = {
+        'agent1': 'Sarah Johnson',
+        'agent2': 'Mike Chen',
+        'agent3': 'Lisa Rodriguez',
+        'agent4': 'David Kim'
+      }
+      const agentName = agentNames[variables.userId] || `Agent ${variables.userId.slice(-4)}`
+      
+      toast.success(`Lead assigned to ${agentName}!`)
       onAssignmentComplete(variables.userId)
     },
     onError: (error: any) => {

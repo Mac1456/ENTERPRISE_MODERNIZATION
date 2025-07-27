@@ -190,12 +190,6 @@ export default function CRMHubDataTable({
         <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
-              <th className="w-12 px-6 py-3">
-                <input 
-                  type="checkbox" 
-                  className="rounded border-gray-300 text-crmhub-blue focus:ring-crmhub-blue"
-                />
-              </th>
               {columns.map((column) => (
                 <th
                   key={column.key}
@@ -217,12 +211,7 @@ export default function CRMHubDataTable({
                 className={`hover:bg-gray-50 transition-colors ${onRowClick ? 'cursor-pointer' : ''}`}
                 onClick={() => onRowClick?.(row)}
               >
-                <td className="px-6 py-4">
-                  <input 
-                    type="checkbox" 
-                    className="rounded border-gray-300 text-crmhub-blue focus:ring-crmhub-blue"
-                  />
-                </td>
+
                 {columns.map((column) => (
                   <td key={column.key} className="px-4 py-4 text-sm">
                     {column.render ? (
