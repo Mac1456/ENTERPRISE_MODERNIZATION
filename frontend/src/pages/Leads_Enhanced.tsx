@@ -10,7 +10,7 @@
  */
 
 import React, { useState, useEffect } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import {
   PlusIcon,
@@ -110,6 +110,8 @@ const mockLeads: Lead[] = [
 ]
 
 export default function LeadsEnhanced() {
+  const queryClient = useQueryClient()
+  
   const [showCaptureModal, setShowCaptureModal] = useState(false)
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
   const [showAssignmentPanel, setShowAssignmentPanel] = useState(false)
@@ -148,7 +150,10 @@ export default function LeadsEnhanced() {
       
       return result
     },
-    refetchInterval: 5000 // Refresh every 5 seconds to see updates
+    staleTime: 0, // Consider data stale immediately
+    cacheTime: 1000, // Keep in cache for only 1 second
+    refetchInterval: 3000, // Refresh every 3 seconds
+    refetchOnWindowFocus: true // Refetch when window gains focus
   })
 
   const formatCurrency = (amount: number) => {
@@ -220,11 +225,21 @@ export default function LeadsEnhanced() {
       const result = await response.json()
       
       if (result.success) {
-        toast.success(`${selectedLeadIds.length} leads assigned successfully`)
+        // Clear selections first
         setSelectedLeadIds([])
         setIsAllSelected(false)
-        // Refetch data to get updated assignments from API
-        refetch()
+        
+        // Show loading toast and refetch data
+        const loadingToast = toast.loading('Updating lead assignments...')
+        try {
+          // Invalidate all leads queries to force fresh data
+          await queryClient.invalidateQueries({ queryKey: ['leads'] })
+          await refetch()
+          toast.success(`${selectedLeadIds.length} leads assigned successfully`, { id: loadingToast })
+        } catch (error) {
+          console.error('Failed to refresh data:', error)
+          toast.error('Assignments completed but failed to refresh data', { id: loadingToast })
+        }
       } else {
         toast.error(result.message || 'Failed to assign leads')
       }
@@ -240,17 +255,30 @@ export default function LeadsEnhanced() {
     setShowAssignmentPanel(true)
   }
 
-  const handleAssignmentComplete = (leadId: string, userId: string | null) => {
-    // Instead of using local assignment, refetch data to get the proper API response
-    refetch()
+  const handleAssignmentComplete = async (leadId: string, userId: string | null) => {
+    // Close the assignment panel first
     setShowAssignmentPanel(false)
     setSelectedLead(null)
     
-    // Show success toast
-    if (userId && userId !== 'unassign') {
-      toast.success('Lead assigned successfully!')
-    } else {
-      toast.success('Lead unassigned successfully!')
+    // Show loading toast
+    const loadingToast = toast.loading('Updating lead assignment...')
+    
+    try {
+      // Invalidate all leads queries to force fresh data
+      await queryClient.invalidateQueries({ queryKey: ['leads'] })
+      
+      // Also do a manual refetch
+      await refetch()
+      
+      // Show success toast
+      if (userId && userId !== 'unassign') {
+        toast.success('Lead assigned successfully!', { id: loadingToast })
+      } else {
+        toast.success('Lead unassigned successfully!', { id: loadingToast })
+      }
+    } catch (error) {
+      console.error('Failed to refresh data:', error)
+      toast.error('Assignment completed but failed to refresh data', { id: loadingToast })
     }
   }
 
