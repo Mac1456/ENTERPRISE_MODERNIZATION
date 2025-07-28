@@ -176,9 +176,33 @@ export default function TransactionsEnhanced() {
   
   // Modal states (following exact pattern from other Enhanced pages)
   const [showTransactionModal, setShowTransactionModal] = useState(false)
+  const [showNewTransactionModal, setShowNewTransactionModal] = useState(false)
   const [showFiltersModal, setShowFiltersModal] = useState(false)
   const [showMilestoneModal, setShowMilestoneModal] = useState(false)
   const [selectedTransaction, setSelectedTransaction] = useState<Opportunity | null>(null)
+  const [selectedMilestone, setSelectedMilestone] = useState<TransactionMilestone | null>(null)
+  
+  // New transaction form state
+  const [newTransactionForm, setNewTransactionForm] = useState({
+    name: '',
+    amount: '',
+    transactionType: 'Purchase' as 'Sale' | 'Purchase' | 'Lease' | 'Rental',
+    salesStage: 'Prospecting' as SalesStage,
+    probability: 50,
+    expectedCloseDate: '',
+    description: '',
+    commissionRate: 3.0,
+    assignedUserId: 'user1',
+    assignedUserName: 'Current User'
+  })
+  
+  // Milestone form state
+  const [milestoneForm, setMilestoneForm] = useState({
+    name: '',
+    description: '',
+    dueDate: '',
+    assignedTo: 'user1'
+  })
 
   const queryClient = useQueryClient()
 
@@ -290,6 +314,156 @@ export default function TransactionsEnhanced() {
     } catch (error) {
       console.error('Error deleting transaction:', error)
       toast.error('Failed to delete transaction')
+    }
+  }
+
+  const handleCreateTransaction = async () => {
+    try {
+      if (!newTransactionForm.name.trim() || !newTransactionForm.amount) {
+        toast.error('Please fill in required fields')
+        return
+      }
+
+      const amount = parseFloat(newTransactionForm.amount)
+      if (isNaN(amount) || amount <= 0) {
+        toast.error('Please enter a valid amount')
+        return
+      }
+
+      const newTransaction: Opportunity = {
+        id: `txn${Date.now()}`,
+        name: newTransactionForm.name,
+        accountId: 'acc1',
+        contactId: 'contact1',
+        amount: amount,
+        salesStage: newTransactionForm.salesStage,
+        probability: newTransactionForm.probability,
+        expectedCloseDate: newTransactionForm.expectedCloseDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        description: newTransactionForm.description,
+        assignedUserId: newTransactionForm.assignedUserId,
+        assignedUserName: newTransactionForm.assignedUserName,
+        transactionType: newTransactionForm.transactionType,
+        commission: {
+          rate: newTransactionForm.commissionRate,
+          amount: amount * (newTransactionForm.commissionRate / 100)
+        },
+        milestones: [
+          {
+            id: `milestone${Date.now()}1`,
+            name: 'Initial Contact',
+            description: 'First contact with client and initial consultation',
+            dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+            completed: false,
+            assignedTo: newTransactionForm.assignedUserId
+          },
+          {
+            id: `milestone${Date.now()}2`,
+            name: 'Property Evaluation',
+            description: 'Property evaluation and market analysis',
+            dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+            completed: false,
+            assignedTo: newTransactionForm.assignedUserId
+          },
+          {
+            id: `milestone${Date.now()}3`,
+            name: 'Contract Negotiation',
+            description: 'Negotiate terms and finalize purchase agreement',
+            dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+            completed: false,
+            assignedTo: newTransactionForm.assignedUserId
+          },
+          {
+            id: `milestone${Date.now()}4`,
+            name: 'Closing',
+            description: 'Final closing and property transfer',
+            dueDate: newTransactionForm.expectedCloseDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            completed: false,
+            assignedTo: newTransactionForm.assignedUserId
+          }
+        ],
+        createdAt: new Date().toISOString(),
+        modifiedAt: new Date().toISOString()
+      }
+
+      setTransactions(prev => [...prev, newTransaction])
+      setFilteredTransactions(prev => [...prev, newTransaction])
+      setShowNewTransactionModal(false)
+      
+      // Reset form
+      setNewTransactionForm({
+        name: '',
+        amount: '',
+        transactionType: 'Purchase',
+        salesStage: 'Prospecting',
+        probability: 50,
+        expectedCloseDate: '',
+        description: '',
+        commissionRate: 3.0,
+        assignedUserId: 'user1',
+        assignedUserName: 'Current User'
+      })
+      
+      toast.success('Transaction created successfully!')
+      queryClient.invalidateQueries({ queryKey: ['transactions'] })
+    } catch (error) {
+      console.error('Error creating transaction:', error)
+      toast.error('Failed to create transaction')
+    }
+  }
+
+  const handleEditMilestone = (transactionId: string, milestone: TransactionMilestone) => {
+    setSelectedTransaction(transactions.find(t => t.id === transactionId) || null)
+    setSelectedMilestone(milestone)
+    setMilestoneForm({
+      name: milestone.name,
+      description: milestone.description,
+      dueDate: milestone.dueDate.split('T')[0], // Extract date part for input
+      assignedTo: milestone.assignedTo
+    })
+    setShowMilestoneModal(true)
+  }
+
+  const handleUpdateMilestone = async () => {
+    try {
+      if (!selectedTransaction || !selectedMilestone) return
+
+      if (!milestoneForm.name.trim()) {
+        toast.error('Please enter milestone name')
+        return
+      }
+
+      const updatedMilestone: TransactionMilestone = {
+        ...selectedMilestone,
+        name: milestoneForm.name,
+        description: milestoneForm.description,
+        dueDate: new Date(milestoneForm.dueDate).toISOString(),
+        assignedTo: milestoneForm.assignedTo,
+        modifiedAt: new Date().toISOString()
+      }
+
+      const updatedTransactions = transactions.map(transaction => {
+        if (transaction.id === selectedTransaction.id) {
+          return {
+            ...transaction,
+            milestones: transaction.milestones.map(milestone =>
+              milestone.id === selectedMilestone.id ? updatedMilestone : milestone
+            )
+          }
+        }
+        return transaction
+      })
+
+      setTransactions(updatedTransactions)
+      setFilteredTransactions(updatedTransactions)
+      setShowMilestoneModal(false)
+      setSelectedMilestone(null)
+      setSelectedTransaction(null)
+      
+      toast.success('Milestone updated successfully!')
+      queryClient.invalidateQueries({ queryKey: ['transactions'] })
+    } catch (error) {
+      console.error('Error updating milestone:', error)
+      toast.error('Failed to update milestone')
     }
   }
 
@@ -499,7 +673,7 @@ export default function TransactionsEnhanced() {
           <p className="text-gray-600">Manage real estate transactions, milestones, and commission tracking</p>
         </div>
         <Button
-          onClick={() => setShowTransactionModal(true)}
+          onClick={() => setShowNewTransactionModal(true)}
           className="flex items-center space-x-2"
         >
           <PlusIcon className="w-4 h-4" />
@@ -737,14 +911,24 @@ export default function TransactionsEnhanced() {
                           </div>
                         </div>
                         
-                        {!milestone.completed && (
+                        <div className="flex items-center space-x-2">
+                          {!milestone.completed && (
+                            <Button
+                              size="sm"
+                              onClick={() => handleMilestoneComplete(transaction.id, milestone.id)}
+                            >
+                              Complete
+                            </Button>
+                          )}
                           <Button
+                            variant="outline"
                             size="sm"
-                            onClick={() => handleMilestoneComplete(transaction.id, milestone.id)}
+                            onClick={() => handleEditMilestone(transaction.id, milestone)}
                           >
-                            Complete
+                            <PencilIcon className="w-3 h-3 mr-1" />
+                            Edit
                           </Button>
-                        )}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1024,6 +1208,318 @@ export default function TransactionsEnhanced() {
               </Button>
               <Button>
                 Edit Transaction
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* New Transaction Modal */}
+      {showNewTransactionModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Create New Transaction</h3>
+              <button
+                onClick={() => {
+                  setShowNewTransactionModal(false)
+                  setNewTransactionForm({
+                    name: '',
+                    amount: '',
+                    transactionType: 'Purchase',
+                    salesStage: 'Prospecting',
+                    probability: 50,
+                    expectedCloseDate: '',
+                    description: '',
+                    commissionRate: 3.0,
+                    assignedUserId: 'user1',
+                    assignedUserName: 'Current User'
+                  })
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Transaction Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={newTransactionForm.name}
+                    onChange={(e) => setNewTransactionForm(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="e.g., 123 Oak Street - Smith Purchase"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Transaction Type
+                  </label>
+                  <select
+                    value={newTransactionForm.transactionType}
+                    onChange={(e) => setNewTransactionForm(prev => ({ ...prev, transactionType: e.target.value as any }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="Purchase">Purchase</option>
+                    <option value="Sale">Sale</option>
+                    <option value="Lease">Lease</option>
+                    <option value="Rental">Rental</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Amount *
+                  </label>
+                  <input
+                    type="number"
+                    value={newTransactionForm.amount}
+                    onChange={(e) => setNewTransactionForm(prev => ({ ...prev, amount: e.target.value }))}
+                    placeholder="450000"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Commission Rate (%)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={newTransactionForm.commissionRate}
+                    onChange={(e) => setNewTransactionForm(prev => ({ ...prev, commissionRate: parseFloat(e.target.value) || 0 }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Sales Stage
+                  </label>
+                  <select
+                    value={newTransactionForm.salesStage}
+                    onChange={(e) => setNewTransactionForm(prev => ({ ...prev, salesStage: e.target.value as SalesStage }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="Prospecting">Prospecting</option>
+                    <option value="Qualification">Qualification</option>
+                    <option value="Proposal">Proposal</option>
+                    <option value="Negotiation">Negotiation</option>
+                    <option value="Closed Won">Closed Won</option>
+                    <option value="Closed Lost">Closed Lost</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Probability (%)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={newTransactionForm.probability}
+                    onChange={(e) => setNewTransactionForm(prev => ({ ...prev, probability: parseInt(e.target.value) || 0 }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Expected Close Date
+                  </label>
+                  <input
+                    type="date"
+                    value={newTransactionForm.expectedCloseDate.split('T')[0]}
+                    onChange={(e) => setNewTransactionForm(prev => ({ ...prev, expectedCloseDate: e.target.value ? new Date(e.target.value).toISOString() : '' }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Assigned Agent
+                  </label>
+                  <select
+                    value={newTransactionForm.assignedUserId}
+                    onChange={(e) => {
+                      const selectedUser = e.target.value
+                      const userName = e.target.options[e.target.selectedIndex].text
+                      setNewTransactionForm(prev => ({ 
+                        ...prev, 
+                        assignedUserId: selectedUser,
+                        assignedUserName: userName
+                      }))
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="user1">Sarah Johnson</option>
+                    <option value="user2">Mike Rodriguez</option>
+                    <option value="user3">Lisa Chen</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Description
+                </label>
+                <textarea
+                  value={newTransactionForm.description}
+                  onChange={(e) => setNewTransactionForm(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Brief description of the transaction..."
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <h4 className="text-sm font-medium text-gray-700 mb-1">Commission Preview:</h4>
+                <p className="text-sm text-gray-600">
+                  {newTransactionForm.amount && !isNaN(parseFloat(newTransactionForm.amount)) 
+                    ? `${formatCurrency(parseFloat(newTransactionForm.amount) * (newTransactionForm.commissionRate / 100))} (${newTransactionForm.commissionRate}% of ${formatCurrency(parseFloat(newTransactionForm.amount))})`
+                    : 'Enter amount to see commission calculation'
+                  }
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-3 mt-6">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowNewTransactionModal(false)
+                  setNewTransactionForm({
+                    name: '',
+                    amount: '',
+                    transactionType: 'Purchase',
+                    salesStage: 'Prospecting',
+                    probability: 50,
+                    expectedCloseDate: '',
+                    description: '',
+                    commissionRate: 3.0,
+                    assignedUserId: 'user1',
+                    assignedUserName: 'Current User'
+                  })
+                }}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleCreateTransaction}>
+                Create Transaction
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Milestone Edit Modal */}
+      {showMilestoneModal && selectedMilestone && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Edit Milestone</h3>
+              <button
+                onClick={() => {
+                  setShowMilestoneModal(false)
+                  setSelectedMilestone(null)
+                  setSelectedTransaction(null)
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Milestone Name *
+                </label>
+                <input
+                  type="text"
+                  value={milestoneForm.name}
+                  onChange={(e) => setMilestoneForm(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="e.g., Home Inspection"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Description
+                </label>
+                <textarea
+                  value={milestoneForm.description}
+                  onChange={(e) => setMilestoneForm(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Brief description of this milestone..."
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Due Date
+                </label>
+                <input
+                  type="date"
+                  value={milestoneForm.dueDate}
+                  onChange={(e) => setMilestoneForm(prev => ({ ...prev, dueDate: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Assigned To
+                </label>
+                <select
+                  value={milestoneForm.assignedTo}
+                  onChange={(e) => setMilestoneForm(prev => ({ ...prev, assignedTo: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="user1">Sarah Johnson</option>
+                  <option value="user2">Mike Rodriguez</option>
+                  <option value="user3">Lisa Chen</option>
+                </select>
+              </div>
+              
+              <div className="bg-blue-50 p-3 rounded-lg">
+                <div className="flex items-center">
+                  <div className={`w-4 h-4 rounded-full mr-2 ${selectedMilestone.completed ? 'bg-green-500' : 'bg-gray-300'}`} />
+                  <span className="text-sm text-gray-700">
+                    Status: {selectedMilestone.completed ? 'Completed' : 'Pending'}
+                  </span>
+                </div>
+                {selectedMilestone.completed && selectedMilestone.completedDate && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Completed: {new Date(selectedMilestone.completedDate).toLocaleDateString()}
+                  </p>
+                )}
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-3 mt-6">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowMilestoneModal(false)
+                  setSelectedMilestone(null)
+                  setSelectedTransaction(null)
+                }}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleUpdateMilestone}>
+                Update Milestone
               </Button>
             </div>
           </div>
