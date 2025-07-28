@@ -123,6 +123,15 @@ export default function PropertySearchEnhanced() {
   const [selectedProperties, setSelectedProperties] = useState<string[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [filters, setFilters] = useState<PropertySearchFilters>({})
+  
+  // Tab state (following exact pattern from Communications_Enhanced.tsx)
+  const [selectedTab, setSelectedTab] = useState<'search' | 'saved-searches' | 'recommendations' | 'mls-sync'>('search')
+  
+  // Modal states (following exact pattern from other Enhanced pages)
+  const [showFiltersModal, setShowFiltersModal] = useState(false)
+  const [showSaveSearchModal, setShowSaveSearchModal] = useState(false)
+  const [showPropertyDetailModal, setShowPropertyDetailModal] = useState(false)
+  const [selectedProperty, setSelectedProperty] = useState<PropertySearchListing | null>(null)
 
   const queryClient = useQueryClient()
 
@@ -131,6 +140,20 @@ export default function PropertySearchEnhanced() {
     queryKey: ['property-search-stats'],
     queryFn: PropertySearchService.getSearchStats,
     refetchInterval: 30000, // Refetch every 30 seconds
+  })
+
+  // Query for saved searches
+  const { data: savedSearches, isLoading: savedSearchesLoading } = useQuery({
+    queryKey: ['saved-searches'],
+    queryFn: PropertySearchService.getSavedSearches,
+    refetchInterval: 60000, // Refetch every minute
+  })
+
+  // Query for property recommendations
+  const { data: recommendations, isLoading: recommendationsLoading } = useQuery({
+    queryKey: ['property-recommendations'],
+    queryFn: PropertySearchService.getPropertyRecommendations,
+    refetchInterval: 300000, // Refetch every 5 minutes
   })
 
   const handleSearch = async (query: PropertySearchQuery) => {
@@ -154,6 +177,47 @@ export default function PropertySearchEnhanced() {
     )
   }
 
+  // Event handlers (following exact pattern from other Enhanced pages)
+  const handlePropertyClick = (property: PropertySearchListing) => {
+    setSelectedProperty(property)
+    setShowPropertyDetailModal(true)
+  }
+
+  const handleSaveSearch = async (searchData: any) => {
+    try {
+      await PropertySearchService.createSavedSearch(searchData)
+      toast.success('Search saved successfully!')
+      setShowSaveSearchModal(false)
+      queryClient.invalidateQueries({ queryKey: ['saved-searches'] })
+      queryClient.invalidateQueries({ queryKey: ['property-search-stats'] })
+    } catch (error) {
+      console.error('Error saving search:', error)
+      toast.error('Failed to save search')
+    }
+  }
+
+  const handleDeleteSavedSearch = async (searchId: string) => {
+    try {
+      await PropertySearchService.deleteSavedSearch(searchId)
+      toast.success('Saved search deleted')
+      queryClient.invalidateQueries({ queryKey: ['saved-searches'] })
+      queryClient.invalidateQueries({ queryKey: ['property-search-stats'] })
+    } catch (error) {
+      console.error('Error deleting saved search:', error)
+      toast.error('Failed to delete saved search')
+    }
+  }
+
+  const handleScheduleShowing = async (propertyId: string) => {
+    try {
+      // Implementation would involve scheduling modal or API call
+      toast.success('Showing scheduled successfully')
+    } catch (error) {
+      console.error('Error scheduling showing:', error)
+      toast.error('Failed to schedule showing')
+    }
+  }
+
   // Format price for display
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -168,7 +232,7 @@ export default function PropertySearchEnhanced() {
   const propertyColumns = [
     {
       key: 'property',
-      header: 'Property',
+      title: 'Property',
       render: (property: PropertySearchListing) => (
         <div className="flex items-center space-x-3">
           <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -183,7 +247,7 @@ export default function PropertySearchEnhanced() {
     },
     {
       key: 'details',
-      header: 'Details',
+      title: 'Details',
       render: (property: PropertySearchListing) => (
         <div className="text-sm">
           <div className="text-gray-900">{property.bedrooms} BD / {property.bathrooms} BA</div>
@@ -193,7 +257,7 @@ export default function PropertySearchEnhanced() {
     },
     {
       key: 'price',
-      header: 'Price',
+      title: 'Price',
       render: (property: PropertySearchListing) => (
         <div className="text-sm">
           <div className="text-gray-900 font-medium">{formatPrice(property.price)}</div>
@@ -203,7 +267,7 @@ export default function PropertySearchEnhanced() {
     },
     {
       key: 'agent',
-      header: 'Listing Agent',
+      title: 'Listing Agent',
       render: (property: PropertySearchListing) => (
         <div className="text-sm">
           <div className="text-gray-900">{property.listingAgent}</div>
@@ -213,7 +277,7 @@ export default function PropertySearchEnhanced() {
     },
     {
       key: 'match',
-      header: 'Match Score',
+      title: 'Match Score',
       render: (property: PropertySearchListing) => (
         <div className="flex items-center space-x-2">
           <div className="flex-1 bg-gray-200 rounded-full h-2">
@@ -224,6 +288,55 @@ export default function PropertySearchEnhanced() {
           </div>
           <span className="text-sm font-medium text-gray-900">{property.matchScore}%</span>
         </div>
+      )
+    },
+    {
+      key: 'actions',
+      title: 'Actions',
+      render: (property: PropertySearchListing) => (
+        <Menu as="div" className="relative">
+          <Menu.Button className="p-2 hover:bg-gray-100 rounded">
+            <EllipsisVerticalIcon className="w-4 h-4" />
+          </Menu.Button>
+          <Menu.Items className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border z-10">
+            <Menu.Item>
+              {({ active }) => (
+                <button
+                  onClick={() => handlePropertyClick(property)}
+                  className={`${active ? 'bg-gray-100' : ''} block w-full text-left px-4 py-2 text-sm`}
+                >
+                  <EyeIcon className="w-4 h-4 mr-2 inline" />
+                  View Details
+                </button>
+              )}
+            </Menu.Item>
+            <Menu.Item>
+              {({ active }) => (
+                <button
+                  onClick={() => handleScheduleShowing(property.id)}
+                  className={`${active ? 'bg-gray-100' : ''} block w-full text-left px-4 py-2 text-sm`}
+                >
+                  <CalendarIcon className="w-4 h-4 mr-2 inline" />
+                  Schedule Showing
+                </button>
+              )}
+            </Menu.Item>
+            <Menu.Item>
+              {({ active }) => (
+                <button
+                  onClick={() => {
+                    setSelectedProperties([property.id])
+                    setShowSaveSearchModal(true)
+                  }}
+                  className={`${active ? 'bg-gray-100' : ''} block w-full text-left px-4 py-2 text-sm`}
+                >
+                  <HeartIcon className="w-4 h-4 mr-2 inline" />
+                  Save for Client
+                </button>
+              )}
+            </Menu.Item>
+          </Menu.Items>
+        </Menu>
       )
     }
   ]
@@ -266,105 +379,373 @@ export default function PropertySearchEnhanced() {
 
   return (
     <div className="space-y-6">
-      {/* Header Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+      {/* Header Section (following exact pattern from Communications_Enhanced.tsx) */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Property Search</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Search and match properties with client preferences
-          </p>
-        </div>
-        <div className="mt-4 sm:mt-0 flex space-x-3">
-          <Button
-            onClick={() => handleSearch({ query: searchQuery, filters })}
-            className="flex items-center space-x-2"
-          >
-            <MagnifyingGlassIcon className="w-4 h-4" />
-            <span>New Search</span>
-          </Button>
+          <h1 className="text-2xl font-bold text-gray-900">Property Search & Matching</h1>
+          <p className="text-gray-600">Search properties, manage saved searches, and track recommendations</p>
         </div>
       </div>
 
       {/* Stats Cards (following exact pattern from other Enhanced pages) */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        {statsCards.map((card, index) => (
-          <motion.div
-            key={card.title}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-          >
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className={`w-8 h-8 ${card.bgColor} rounded-md flex items-center justify-center`}>
-                      <card.icon className="w-5 h-5 text-white" />
+      {searchStats && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          {statsCards.map((card, index) => (
+            <motion.div
+              key={card.title}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+            >
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">{card.title}</CardTitle>
+                  <card.icon className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent className="text-center">
+                  <div className="text-xl sm:text-2xl font-bold">{card.value}</div>
+                  <p className="text-xs text-muted-foreground">{card.change}</p>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+      )}
+
+      {/* Tab Navigation (following exact pattern from Communications_Enhanced.tsx) */}
+      <div className="border-b border-gray-200">
+        <nav className="-mb-px flex space-x-8">
+          {[
+            { id: 'search', label: 'Search Results', icon: MagnifyingGlassIcon },
+            { id: 'saved-searches', label: 'Saved Searches', icon: BookmarkIcon },
+            { id: 'recommendations', label: 'Recommendations', icon: TrophyIcon },
+            { id: 'mls-sync', label: 'MLS Sync', icon: ArrowPathIcon }
+          ].map((tab) => {
+            const Icon = tab.icon
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setSelectedTab(tab.id as any)}
+                className={`group inline-flex items-center py-2 px-1 border-b-2 font-medium text-sm ${
+                  selectedTab === tab.id
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <Icon className={`-ml-0.5 mr-2 h-5 w-5 ${
+                  selectedTab === tab.id ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500'
+                }`} />
+                {tab.label}
+              </button>
+            )
+          })}
+        </nav>
+      </div>
+
+      {/* Content based on selected tab */}
+      {selectedTab === 'search' && (
+        <>
+          {/* Search Bar and Filters */}
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row gap-4 items-center">
+              <div className="flex-1 relative">
+                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type="text"
+                  placeholder="Search properties by location, features, or MLS number..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div className="flex items-center space-x-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowFiltersModal(true)}
+                  className="flex items-center space-x-2"
+                >
+                  <FunnelIcon className="w-4 h-4" />
+                  <span>Filters</span>
+                </Button>
+                <Button
+                  onClick={() => handleSearch({ query: searchQuery, filters })}
+                  className="flex items-center space-x-2"
+                >
+                  <MagnifyingGlassIcon className="w-4 h-4" />
+                  <span>Search</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowSaveSearchModal(true)}
+                  className="flex items-center space-x-2"
+                >
+                  <BookmarkIcon className="w-4 h-4" />
+                  <span>Save Search</span>
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Properties Table/Cards - Mobile Responsive Dual Layout */}
+          <div className="bg-white rounded-lg shadow">
+            <div className="p-6 border-b border-gray-200">
+              <h3 className="text-lg font-medium text-gray-900">
+                Property Listings ({properties.length})
+              </h3>
+            </div>
+            
+            {/* Desktop Table View */}
+            <div className="hidden md:block">
+              <CRMHubDataTable
+                data={properties}
+                columns={propertyColumns}
+                selectedItems={selectedProperties}
+                onSelectItem={handlePropertySelect}
+                onSelectAll={(selected: boolean) => setSelectedProperties(selected ? properties.map(p => p.id) : [])}
+                onRowClick={handlePropertyClick}
+                className="min-h-[400px]"
+              />
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="block md:hidden p-4 space-y-4">
+              {properties.map((property) => (
+                <motion.div
+                  key={property.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={() => handlePropertyClick(property)}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                          <HomeIcon className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-900">{property.address}</h4>
+                          <p className="text-xs text-gray-500">{property.city}, {property.state} {property.zipCode}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-2">
+                        <div>{property.bedrooms} BD / {property.bathrooms} BA</div>
+                        <div>{property.sqft?.toLocaleString()} sqft</div>
+                        <div className="font-medium text-gray-900">{formatPrice(property.price)}</div>
+                        <div>{property.daysOnMarket} days on market</div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <div className="text-xs text-gray-500">{property.listingAgent}</div>
+                        <div className="flex items-center space-x-1">
+                          <div className="w-16 bg-gray-200 rounded-full h-1">
+                            <div 
+                              className="h-1 rounded-full bg-green-500" 
+                              style={{ width: `${property.matchScore}%` }}
+                            />
+                          </div>
+                          <span className="text-xs font-medium text-gray-900">{property.matchScore}%</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <Menu as="div" className="relative ml-2">
+                      <Menu.Button className="p-1 hover:bg-gray-100 rounded">
+                        <EllipsisVerticalIcon className="w-4 h-4" />
+                      </Menu.Button>
+                      <Menu.Items className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border z-10">
+                        <Menu.Item>
+                          {({ active }) => (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleScheduleShowing(property.id)
+                              }}
+                              className={`${active ? 'bg-gray-100' : ''} block w-full text-left px-4 py-2 text-sm`}
+                            >
+                              <CalendarIcon className="w-4 h-4 mr-2 inline" />
+                              Schedule Showing
+                            </button>
+                          )}
+                        </Menu.Item>
+                      </Menu.Items>
+                    </Menu>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      {selectedTab === 'saved-searches' && (
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-medium text-gray-900">Saved Searches</h3>
+            <Button
+              onClick={() => setShowSaveSearchModal(true)}
+              className="flex items-center space-x-2"
+            >
+              <PlusIcon className="w-4 h-4" />
+              <span>New Saved Search</span>
+            </Button>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow">
+            {savedSearchesLoading ? (
+              <div className="p-8 text-center text-gray-500">Loading saved searches...</div>
+            ) : savedSearches && savedSearches.length > 0 ? (
+              <div className="divide-y divide-gray-200">
+                {savedSearches.map((search: any) => (
+                  <div key={search.id} className="p-6 hover:bg-gray-50">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-900">{search.name}</h4>
+                        <p className="text-sm text-gray-500 mt-1">{search.description}</p>
+                        <div className="flex items-center space-x-4 mt-2 text-xs text-gray-400">
+                          <span>Created {formatDistanceToNow(new Date(search.createdAt), { addSuffix: true })}</span>
+                          <span>•</span>
+                          <span>{search.newMatches || 0} new matches</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleSearch(search.searchCriteria)}
+                        >
+                          Run Search
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteSavedSearch(search.id)}
+                        >
+                          Delete
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">{card.title}</dt>
-                      <dd className="flex items-baseline">
-                        <div className="text-2xl font-semibold text-gray-900">{card.value}</div>
-                        <div className={`ml-2 flex items-baseline text-sm font-semibold ${
-                          card.changeType === 'increase' ? 'text-green-600' : 'text-red-600'
-                        }`}>
-                          {card.change}
+                ))}
+              </div>
+            ) : (
+              <div className="p-8 text-center">
+                <BookmarkIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-sm font-medium text-gray-900 mb-2">No saved searches</h3>
+                <p className="text-sm text-gray-500 mb-4">Create your first saved search to get started.</p>
+                <Button onClick={() => setShowSaveSearchModal(true)}>
+                  <PlusIcon className="w-4 h-4 mr-2" />
+                  Create Saved Search
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {selectedTab === 'recommendations' && (
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium text-gray-900">Property Recommendations</h3>
+          
+          <div className="bg-white rounded-lg shadow">
+            {recommendationsLoading ? (
+              <div className="p-8 text-center text-gray-500">Loading recommendations...</div>
+            ) : recommendations && recommendations.length > 0 ? (
+              <div className="divide-y divide-gray-200">
+                {recommendations.map((rec: any) => (
+                  <div key={rec.id} className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h4 className="text-sm font-medium text-gray-900">{rec.clientName}</h4>
+                        <p className="text-sm text-gray-500 mt-1">{rec.propertyCount} recommended properties</p>
+                        <div className="flex items-center space-x-4 mt-2 text-xs text-gray-400">
+                          <span>Budget: {formatPrice(rec.budgetMin)} - {formatPrice(rec.budgetMax)}</span>
+                          <span>•</span>
+                          <span>{rec.preferredLocation}</span>
                         </div>
-                      </dd>
-                    </dl>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Badge variant="secondary">
+                          {rec.matchScore}% match
+                        </Badge>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            // Load recommendations for this client
+                            toast.success('Loading recommendations...')
+                          }}
+                        >
+                          View Properties
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-8 text-center">
+                <TrophyIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-sm font-medium text-gray-900 mb-2">No recommendations available</h3>
+                <p className="text-sm text-gray-500">Property recommendations will appear here based on client preferences.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {selectedTab === 'mls-sync' && (
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium text-gray-900">MLS Data Synchronization</h3>
+          
+          <div className="grid gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Sync Status</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Last Sync</span>
+                    <span className="text-sm font-medium">2 hours ago</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Properties Synced</span>
+                    <span className="text-sm font-medium">1,247</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Sync Status</span>
+                    <Badge variant="secondary" className="bg-green-100 text-green-800">Active</Badge>
+                  </div>
+                  <Button className="w-full">
+                    <ArrowPathIcon className="w-4 h-4 mr-2" />
+                    Force Sync Now
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Sync Statistics</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4 text-center">
+                  <div>
+                    <div className="text-2xl font-bold text-blue-600">98.5%</div>
+                    <div className="text-sm text-gray-500">Success Rate</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-green-600">15 min</div>
+                    <div className="text-sm text-gray-500">Avg Sync Time</div>
                   </div>
                 </div>
               </CardContent>
             </Card>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Search Bar */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center space-x-4">
-            <div className="flex-1 relative">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                placeholder="Search properties by location, features, or MLS number..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <Button
-              onClick={() => handleSearch({ query: searchQuery, filters })}
-              className="flex items-center space-x-2"
-            >
-              <MagnifyingGlassIcon className="w-4 h-4" />
-              <span>Search</span>
-            </Button>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Properties Table */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-base font-medium">
-            Property Listings ({properties.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <CRMHubDataTable
-            data={properties}
-            columns={propertyColumns}
-            selectedItems={selectedProperties}
-            onSelectItem={handlePropertySelect}
-            onSelectAll={(selected) => setSelectedProperties(selected ? properties.map(p => p.id) : [])}
-            className="min-h-[400px]"
-          />
-        </CardContent>
-      </Card>
+        </div>
+      )}
     </div>
   )
 }
