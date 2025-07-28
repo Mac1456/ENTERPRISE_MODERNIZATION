@@ -128,6 +128,10 @@ export default function PropertySearchEnhanced() {
   const [showSaveSearchModal, setShowSaveSearchModal] = useState(false)
   const [showPropertyDetailModal, setShowPropertyDetailModal] = useState(false)
   const [selectedProperty, setSelectedProperty] = useState<PropertySearchListing | null>(null)
+  
+  // Saved search form state
+  const [savedSearchName, setSavedSearchName] = useState('')
+  const [savedSearchDescription, setSavedSearchDescription] = useState('')
 
   const queryClient = useQueryClient()
 
@@ -139,37 +143,60 @@ export default function PropertySearchEnhanced() {
     showingsScheduled: 12
   }
   
-  const savedSearches: any[] = []
+  // Mock saved searches data with some initial data
+  const [savedSearches, setSavedSearches] = useState([
+    {
+      id: 'search1',
+      name: 'Downtown Properties Under $500K',
+      description: 'Properties in downtown area with budget under $500,000',
+      searchCriteria: { query: 'Downtown', filters: { maxPrice: 500000 } },
+      createdAt: '2024-07-20T00:00:00Z',
+      newMatches: 3
+    }
+  ])
   const savedSearchesLoading = false
   
-  // Mock recommendations data
+  // Mock property recommendations data
   const recommendations = [
     {
       id: 'rec1',
       clientName: 'John & Sarah Smith',
-      propertyCount: 8,
-      budgetMin: 400000,
-      budgetMax: 550000,
-      preferredLocation: 'Downtown Area',
-      matchScore: 92
+      clientId: 'client1',
+      properties: [
+        {
+          ...mockProperties[0],
+          recommendationReason: 'Matches budget and location preferences',
+          matchScore: 92
+        },
+        {
+          id: 'prop3',
+          address: '789 Pine Street',
+          city: 'Downtown',
+          state: 'CA',
+          zipCode: '90210',
+          price: 475000,
+          bedrooms: 3,
+          bathrooms: 2,
+          sqft: 1650,
+          propertyType: 'Townhouse',
+          listingAgent: 'Lisa Rodriguez',
+          mlsNumber: 'MLS345678',
+          recommendationReason: 'Similar to saved properties',
+          matchScore: 89
+        }
+      ]
     },
     {
       id: 'rec2',
       clientName: 'Michael Chen',
-      propertyCount: 5,
-      budgetMin: 300000,
-      budgetMax: 450000,
-      preferredLocation: 'Midtown',
-      matchScore: 88
-    },
-    {
-      id: 'rec3',
-      clientName: 'Emma Davis',
-      propertyCount: 12,
-      budgetMin: 500000,
-      budgetMax: 750000,
-      preferredLocation: 'Uptown',
-      matchScore: 95
+      clientId: 'client2',
+      properties: [
+        {
+          ...mockProperties[1],
+          recommendationReason: 'Perfect match for budget and style',
+          matchScore: 94
+        }
+      ]
     }
   ]
   const recommendationsLoading = false
@@ -225,13 +252,27 @@ export default function PropertySearchEnhanced() {
     setShowPropertyDetailModal(true)
   }
 
-  const handleSaveSearch = async (searchData: any) => {
+  const handleSaveSearch = async () => {
     try {
-      await PropertySearchService.createSavedSearch(searchData)
+      if (!savedSearchName.trim()) {
+        toast.error('Please enter a search name')
+        return
+      }
+      
+      const newSavedSearch = {
+        id: `search${Date.now()}`,
+        name: savedSearchName,
+        description: savedSearchDescription || `Search for: ${searchQuery}`,
+        searchCriteria: { query: searchQuery, filters },
+        createdAt: new Date().toISOString(),
+        newMatches: 0
+      }
+      
+      setSavedSearches(prev => [...prev, newSavedSearch])
       toast.success('Search saved successfully!')
       setShowSaveSearchModal(false)
-      queryClient.invalidateQueries({ queryKey: ['saved-searches'] })
-      queryClient.invalidateQueries({ queryKey: ['property-search-stats'] })
+      setSavedSearchName('')
+      setSavedSearchDescription('')
     } catch (error) {
       console.error('Error saving search:', error)
       toast.error('Failed to save search')
@@ -240,10 +281,8 @@ export default function PropertySearchEnhanced() {
 
   const handleDeleteSavedSearch = async (searchId: string) => {
     try {
-      await PropertySearchService.deleteSavedSearch(searchId)
+      setSavedSearches(prev => prev.filter(search => search.id !== searchId))
       toast.success('Saved search deleted')
-      queryClient.invalidateQueries({ queryKey: ['saved-searches'] })
-      queryClient.invalidateQueries({ queryKey: ['property-search-stats'] })
     } catch (error) {
       console.error('Error deleting saved search:', error)
       toast.error('Failed to delete saved search')
@@ -497,9 +536,11 @@ export default function PropertySearchEnhanced() {
                   type="text"
                   placeholder="Search properties by location, features, or MLS number..."
                   value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value)
-                    performSearch(e.target.value)
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      handleSearch({ query: searchQuery, filters })
+                    }
                   }}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
                 />
@@ -531,7 +572,6 @@ export default function PropertySearchEnhanced() {
                       return
                     }
                     setShowSaveSearchModal(true)
-                    toast.success('Save search functionality activated!')
                   }}
                   className="flex items-center space-x-2"
                 >
@@ -637,10 +677,7 @@ export default function PropertySearchEnhanced() {
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-medium text-gray-900">Saved Searches</h3>
             <Button
-              onClick={() => {
-                setShowSaveSearchModal(true)
-                toast.success('Create new saved search activated!')
-              }}
+              onClick={() => setShowSaveSearchModal(true)}
               className="flex items-center space-x-2"
             >
               <PlusIcon className="w-4 h-4" />
@@ -690,10 +727,7 @@ export default function PropertySearchEnhanced() {
                 <BookmarkIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-sm font-medium text-gray-900 mb-2">No saved searches</h3>
                 <p className="text-sm text-gray-500 mb-4">Create your first saved search to get started.</p>
-                <Button onClick={() => {
-                  setShowSaveSearchModal(true)
-                  toast.success('Create saved search activated!')
-                }}>
+                <Button onClick={() => setShowSaveSearchModal(true)}>
                   <PlusIcon className="w-4 h-4 mr-2" />
                   Create Saved Search
                 </Button>
@@ -711,37 +745,50 @@ export default function PropertySearchEnhanced() {
             {recommendationsLoading ? (
               <div className="p-8 text-center text-gray-500">Loading recommendations...</div>
             ) : recommendations && recommendations.length > 0 ? (
-              <div className="divide-y divide-gray-200">
+              <div className="space-y-6">
                 {recommendations.map((rec: any) => (
-                  <div key={rec.id} className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h4 className="text-sm font-medium text-gray-900">{rec.clientName}</h4>
-                        <p className="text-sm text-gray-500 mt-1">{rec.propertyCount} recommended properties</p>
-                        <div className="flex items-center space-x-4 mt-2 text-xs text-gray-400">
-                          <span>Budget: {formatPrice(rec.budgetMin)} - {formatPrice(rec.budgetMax)}</span>
-                          <span>•</span>
-                          <span>{rec.preferredLocation}</span>
+                  <div key={rec.id} className="border rounded-lg">
+                    <div className="p-4 bg-gray-50 border-b">
+                      <h4 className="text-lg font-medium text-gray-900">{rec.clientName}</h4>
+                      <p className="text-sm text-gray-500">{rec.properties.length} recommended properties</p>
+                    </div>
+                    
+                    <div className="divide-y divide-gray-200">
+                      {rec.properties.map((property: any) => (
+                        <div key={property.id} className="p-4 hover:bg-gray-50">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-start space-x-3 flex-1">
+                              <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <HomeIcon className="w-5 h-5 text-blue-600" />
+                              </div>
+                              <div className="flex-1">
+                                <h5 className="text-sm font-medium text-gray-900">{property.address}</h5>
+                                <p className="text-sm text-gray-500">{property.city}, {property.state} {property.zipCode}</p>
+                                <div className="flex items-center space-x-4 mt-1 text-xs text-gray-600">
+                                  <span>{property.bedrooms} BD / {property.bathrooms} BA</span>
+                                  <span>{property.sqft?.toLocaleString()} sqft</span>
+                                  <span className="font-medium text-gray-900">{formatPrice(property.price)}</span>
+                                </div>
+                                <p className="text-xs text-blue-600 mt-1">{property.recommendationReason}</p>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center space-x-2 ml-4">
+                              <div className="text-center">
+                                <div className="text-sm font-medium text-gray-900">{property.matchScore}%</div>
+                                <div className="text-xs text-gray-500">match</div>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handlePropertyClick(property)}
+                              >
+                                View Details
+                              </Button>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Badge variant="secondary">
-                          {rec.matchScore}% match
-                        </Badge>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            // Load recommendations for this client and switch to search tab
-                            setSelectedTab('search')
-                            setSearchQuery(rec.preferredLocation)
-                            performSearch(rec.preferredLocation)
-                            toast.success(`Loaded ${rec.propertyCount} recommendations for ${rec.clientName}`)
-                          }}
-                        >
-                          View Properties
-                        </Button>
-                      </div>
+                      ))}
                     </div>
                   </div>
                 ))}
@@ -814,6 +861,78 @@ export default function PropertySearchEnhanced() {
                 </div>
               </CardContent>
             </Card>
+          </div>
+        </div>
+      )}
+
+      {/* Save Search Modal */}
+      {showSaveSearchModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Save Search</h3>
+              <button
+                onClick={() => {
+                  setShowSaveSearchModal(false)
+                  setSavedSearchName('')
+                  setSavedSearchDescription('')
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Search Name *
+                </label>
+                <input
+                  type="text"
+                  value={savedSearchName}
+                  onChange={(e) => setSavedSearchName(e.target.value)}
+                  placeholder="e.g., Downtown Properties Under $500K"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Description (Optional)
+                </label>
+                <textarea
+                  value={savedSearchDescription}
+                  onChange={(e) => setSavedSearchDescription(e.target.value)}
+                  placeholder="Brief description of this search..."
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <h4 className="text-sm font-medium text-gray-700 mb-1">Search Criteria:</h4>
+                <p className="text-sm text-gray-600">
+                  Query: "{searchQuery || 'All properties'}"
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-3 mt-6">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowSaveSearchModal(false)
+                  setSavedSearchName('')
+                  setSavedSearchDescription('')
+                }}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleSaveSearch}>
+                Save Search
+              </Button>
+            </div>
           </div>
         </div>
       )}
