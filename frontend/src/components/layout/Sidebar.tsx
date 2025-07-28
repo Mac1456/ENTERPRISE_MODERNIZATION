@@ -31,6 +31,7 @@ const navigation: NavigationItem[] = [
   { name: 'Contacts', href: '/contacts', icon: UsersIcon },
   { name: 'Communications', href: '/communications', icon: ChatBubbleLeftRightIcon },
   { name: 'Property Search', href: '/property-search', icon: MagnifyingGlassIcon },
+  { name: 'Transactions', href: '/transactions', icon: ChartBarIcon },
   { name: 'Accounts', href: '/accounts', icon: BuildingOffice2Icon },
   { name: 'Properties', href: '/properties', icon: BuildingOffice2Icon },
   { name: 'Opportunities', href: '/opportunities', icon: ChartBarIcon },
