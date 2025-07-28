@@ -222,7 +222,7 @@ export default function PropertySearchEnhanced() {
     {
       key: 'property',
       title: 'Property',
-      render: (property: PropertySearchListing) => (
+      render: (value: any, property: PropertySearchListing) => (
         <div className="flex items-center space-x-3">
           <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
             <HomeIcon className="w-5 h-5 text-blue-600" />
@@ -237,7 +237,7 @@ export default function PropertySearchEnhanced() {
     {
       key: 'details',
       title: 'Details',
-      render: (property: PropertySearchListing) => (
+      render: (value: any, property: PropertySearchListing) => (
         <div className="text-sm">
           <div className="text-gray-900">{property.bedrooms} BD / {property.bathrooms} BA</div>
           <div className="text-gray-500">{property.sqft?.toLocaleString()} sqft • {property.propertyType}</div>
@@ -247,7 +247,7 @@ export default function PropertySearchEnhanced() {
     {
       key: 'price',
       title: 'Price',
-      render: (property: PropertySearchListing) => (
+      render: (value: any, property: PropertySearchListing) => (
         <div className="text-sm">
           <div className="text-gray-900 font-medium">{formatPrice(property.price)}</div>
           <div className="text-gray-500">{property.daysOnMarket} days on market</div>
@@ -257,7 +257,7 @@ export default function PropertySearchEnhanced() {
     {
       key: 'agent',
       title: 'Listing Agent',
-      render: (property: PropertySearchListing) => (
+      render: (value: any, property: PropertySearchListing) => (
         <div className="text-sm">
           <div className="text-gray-900">{property.listingAgent}</div>
           <div className="text-gray-500">MLS: {property.mlsNumber}</div>
@@ -267,7 +267,7 @@ export default function PropertySearchEnhanced() {
     {
       key: 'match',
       title: 'Match Score',
-      render: (property: PropertySearchListing) => (
+      render: (value: any, property: PropertySearchListing) => (
         <div className="flex items-center space-x-2">
           <div className="flex-1 bg-gray-200 rounded-full h-2">
             <div 
@@ -282,7 +282,7 @@ export default function PropertySearchEnhanced() {
     {
       key: 'actions',
       title: 'Actions',
-      render: (property: PropertySearchListing) => (
+      render: (value: any, property: PropertySearchListing) => (
         <Menu as="div" className="relative">
           <Menu.Button className="p-2 hover:bg-gray-100 rounded">
             <EllipsisVerticalIcon className="w-4 h-4" />
