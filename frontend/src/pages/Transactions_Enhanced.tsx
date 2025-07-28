@@ -574,14 +574,20 @@ export default function TransactionsEnhanced() {
       title: 'Actions',
       render: (value: any, transaction: Opportunity) => (
         <Menu as="div" className="relative">
-          <Menu.Button className="p-2 hover:bg-gray-100 rounded">
+          <Menu.Button 
+            className="p-2 hover:bg-gray-100 rounded"
+            onClick={(e) => e.stopPropagation()}
+          >
             <EllipsisVerticalIcon className="w-4 h-4" />
           </Menu.Button>
           <Menu.Items className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border z-10">
             <Menu.Item>
               {({ active }) => (
                 <button
-                  onClick={() => handleTransactionClick(transaction)}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleTransactionClick(transaction)
+                  }}
                   className={`${active ? 'bg-gray-100' : ''} block w-full text-left px-4 py-2 text-sm`}
                 >
                   <PencilIcon className="w-4 h-4 mr-2 inline" />
@@ -592,7 +598,8 @@ export default function TransactionsEnhanced() {
             <Menu.Item>
               {({ active }) => (
                 <button
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation()
                     const nextStage = getNextStage(transaction.salesStage)
                     if (nextStage) handleStageUpdate(transaction.id, nextStage)
                   }}
@@ -607,7 +614,10 @@ export default function TransactionsEnhanced() {
             <Menu.Item>
               {({ active }) => (
                 <button
-                  onClick={() => handleDeleteTransaction(transaction.id)}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleDeleteTransaction(transaction.id)
+                  }}
                   className={`${active ? 'bg-gray-100' : ''} block w-full text-left px-4 py-2 text-sm text-red-600`}
                 >
                   <TrashIcon className="w-4 h-4 mr-2 inline" />
@@ -848,10 +858,27 @@ export default function TransactionsEnhanced() {
                     </div>
                     
                     <Menu as="div" className="relative ml-2">
-                      <Menu.Button className="p-1 hover:bg-gray-100 rounded">
+                      <Menu.Button 
+                        className="p-1 hover:bg-gray-100 rounded"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <EllipsisVerticalIcon className="w-4 h-4" />
                       </Menu.Button>
                       <Menu.Items className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border z-10">
+                        <Menu.Item>
+                          {({ active }) => (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleTransactionClick(transaction)
+                              }}
+                              className={`${active ? 'bg-gray-100' : ''} block w-full text-left px-4 py-2 text-sm`}
+                            >
+                              <PencilIcon className="w-4 h-4 mr-2 inline" />
+                              View Details
+                            </button>
+                          )}
+                        </Menu.Item>
                         <Menu.Item>
                           {({ active }) => (
                             <button
@@ -865,6 +892,20 @@ export default function TransactionsEnhanced() {
                             >
                               <ArrowRightIcon className="w-4 h-4 mr-2 inline" />
                               Advance Stage
+                            </button>
+                          )}
+                        </Menu.Item>
+                        <Menu.Item>
+                          {({ active }) => (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleDeleteTransaction(transaction.id)
+                              }}
+                              className={`${active ? 'bg-gray-100' : ''} block w-full text-left px-4 py-2 text-sm text-red-600`}
+                            >
+                              <TrashIcon className="w-4 h-4 mr-2 inline" />
+                              Delete
                             </button>
                           )}
                         </Menu.Item>
