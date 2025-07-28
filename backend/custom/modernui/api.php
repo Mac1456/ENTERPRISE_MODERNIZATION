@@ -244,6 +244,68 @@ if (strpos($apiPath, '/leads') === 0) {
     handleProperties($method);
 } elseif (strpos($apiPath, '/users') === 0) {
     handleUsers($method);
+} elseif (strpos($apiPath, '/communications') === 0) {
+    // Handle communication endpoints
+    $communicationPath = str_replace('/communications', '', $apiPath);
+    
+    if (strpos($communicationPath, '/conversations') === 0) {
+        $conversationPath = str_replace('/conversations', '', $communicationPath);
+        if ($conversationPath === '/') {
+            handleConversations($method, $input);
+        } elseif (preg_match('/^\/([^\/]+)$/', $conversationPath, $matches)) {
+            handleSingleConversation($method, $matches[1], $input);
+        } elseif (preg_match('/^\/([^\/]+)\/messages$/', $conversationPath, $matches)) {
+            handleConversationMessages($method, $matches[1], $input);
+        } elseif (preg_match('/^\/([^\/]+)\/participants$/', $conversationPath, $matches)) {
+            handleConversationParticipants($method, $matches[1], $input);
+        }
+    } elseif (strpos($communicationPath, '/documents') === 0) {
+        $documentPath = str_replace('/documents', '', $communicationPath);
+        if ($documentPath === '/') {
+            handleDocuments($method, $input);
+        } elseif ($documentPath === '/upload') {
+            handleDocumentUpload($method, $input);
+        } elseif (preg_match('/^\/([^\/]+)$/', $documentPath, $matches)) {
+            handleSingleDocument($method, $matches[1], $input);
+        } elseif (preg_match('/^\/([^\/]+)\/share$/', $documentPath, $matches)) {
+            handleDocumentShare($method, $matches[1], $input);
+        }
+    } elseif (strpos($communicationPath, '/notifications') === 0) {
+        $notificationPath = str_replace('/notifications', '', $communicationPath);
+        if ($notificationPath === '/') {
+            handleNotifications($method, $input);
+        } elseif (preg_match('/^\/([^\/]+)$/', $notificationPath, $matches)) {
+            handleSingleNotification($method, $matches[1], $input);
+        }
+    } elseif ($communicationPath === '/stats') {
+        handleCommunicationStats($method);
+    } elseif ($communicationPath === '/preferences') {
+        handleCommunicationPreferences($method, $input);
+    }
+} elseif (strpos($apiPath, '/property-search') === 0) {
+    // Handle property search endpoints
+    $searchPath = str_replace('/property-search', '', $apiPath);
+    
+    if ($searchPath === '/search' && $method === 'POST') {
+        handlePropertySearch($input);
+    } elseif ($searchPath === '/saved-searches' && $method === 'GET') {
+        handleSavedSearches($method);
+    } elseif ($searchPath === '/saved-searches' && $method === 'POST') {
+        handleSavedSearches($method, $input);
+    } elseif (preg_match('/^\/saved-searches\/([^\/]+)$/', $searchPath, $matches) && $method === 'DELETE') {
+        handleDeleteSavedSearch($matches[1]);
+    } elseif ($searchPath === '/recommendations' && $method === 'GET') {
+        handlePropertyRecommendations();
+    } elseif ($searchPath === '/stats' && $method === 'GET') {
+        handlePropertySearchStats();
+    } elseif ($searchPath === '/filters' && $method === 'GET') {
+        handleSearchFilters();
+    } elseif ($searchPath === '/mls-data' && $method === 'GET') {
+        handleMLSData();
+    } else {
+        http_response_code(404);
+        echo json_encode(['error' => 'Property search endpoint not found']);
+    }
 } else {
     http_response_code(404);
     echo json_encode(['error' => 'Endpoint not found']);
@@ -846,14 +908,887 @@ function loadContactAssignments() {
 }
 
 function saveContactAssignments($assignments) {
-    $cacheDir = getcwd() . '/cache';
-    $assignmentFile = $cacheDir . '/contact_assignments.json';
-    
-    if (!is_dir($cacheDir)) {
-        mkdir($cacheDir, 0777, true);
-    }
-    
-    $success = file_put_contents($assignmentFile, json_encode($assignments));
-    return $success !== false;
+$cacheDir = getcwd() . '/cache';
+$assignmentFile = $cacheDir . '/contact_assignments.json';
+
+if (!is_dir($cacheDir)) {
+mkdir($cacheDir, 0777, true);
 }
-?> 
+
+$success = file_put_contents($assignmentFile, json_encode($assignments));
+return $success !== false;
+}
+
+// ===== COMMUNICATION HANDLERS =====
+
+function handleConversations($method, $input = []) {
+    if ($method === 'GET') {
+        // Return mock conversations
+        $mockConversations = [
+            [
+                'id' => '1',
+                'name' => 'Johnson Property Inquiry',
+                'type' => 'property_inquiry',
+                'participants' => [
+                    [
+                        'userId' => 'user1',
+                        'userName' => 'Sarah Johnson',
+                        'userRole' => 'client',
+                        'joinedAt' => '2024-07-25T10:00:00Z',
+                        'isActive' => true,
+                        'permissions' => [
+                            'canAddParticipants' => false,
+                            'canRemoveParticipants' => false,
+                            'canUploadDocuments' => true,
+                            'canCreateTasks' => false,
+                            'canViewAllMessages' => true
+                        ]
+                    ],
+                    [
+                        'userId' => 'agent1',
+                        'userName' => 'Mike Agent',
+                        'userRole' => 'agent',
+                        'joinedAt' => '2024-07-25T10:00:00Z',
+                        'isActive' => true,
+                        'permissions' => [
+                            'canAddParticipants' => true,
+                            'canRemoveParticipants' => true,
+                            'canUploadDocuments' => true,
+                            'canCreateTasks' => true,
+                            'canViewAllMessages' => true
+                        ]
+                    ]
+                ],
+                'lastMessage' => [
+                    'id' => 'msg1',
+                    'conversationId' => '1',
+                    'senderId' => 'user1',
+                    'senderName' => 'Sarah Johnson',
+                    'content' => 'I\'m interested in the 3BR house on Maple Street',
+                    'messageType' => 'text',
+                    'timestamp' => '2024-07-27T14:30:00Z',
+                    'readBy' => ['agent1'],
+                    'status' => 'delivered'
+                ],
+                'lastActivity' => '2024-07-27T14:30:00Z',
+                'isArchived' => false,
+                'isMuted' => false,
+                'relatedContactId' => '1',
+                'relatedContactName' => 'Sarah Johnson',
+                'relatedPropertyAddress' => '123 Maple Street',
+                'createdAt' => '2024-07-25T10:00:00Z',
+                'createdBy' => 'agent1'
+            ],
+            [
+                'id' => '2',
+                'name' => 'Downtown Condo Transaction Team',
+                'type' => 'transaction_team',
+                'participants' => [
+                    [
+                        'userId' => 'agent1',
+                        'userName' => 'Mike Agent',
+                        'userRole' => 'listing_agent',
+                        'joinedAt' => '2024-07-20T09:00:00Z',
+                        'isActive' => true,
+                        'permissions' => [
+                            'canAddParticipants' => true,
+                            'canRemoveParticipants' => true,
+                            'canUploadDocuments' => true,
+                            'canCreateTasks' => true,
+                            'canViewAllMessages' => true
+                        ]
+                    ],
+                    [
+                        'userId' => 'agent2',
+                        'userName' => 'Lisa Buyer Agent',
+                        'userRole' => 'buyer_agent',
+                        'joinedAt' => '2024-07-20T09:15:00Z',
+                        'isActive' => true,
+                        'permissions' => [
+                            'canAddParticipants' => true,
+                            'canRemoveParticipants' => false,
+                            'canUploadDocuments' => true,
+                            'canCreateTasks' => true,
+                            'canViewAllMessages' => true
+                        ]
+                    ]
+                ],
+                'lastMessage' => [
+                    'id' => 'msg2',
+                    'conversationId' => '2',
+                    'senderId' => 'agent2',
+                    'senderName' => 'Lisa Buyer Agent',
+                    'content' => 'Contract review completed',
+                    'messageType' => 'document',
+                    'timestamp' => '2024-07-27T13:15:00Z',
+                    'readBy' => ['agent1'],
+                    'status' => 'read'
+                ],
+                'lastActivity' => '2024-07-27T13:15:00Z',
+                'isArchived' => false,
+                'isMuted' => false,
+                'relatedPropertyAddress' => '456 Downtown Plaza #5B',
+                'createdAt' => '2024-07-20T09:00:00Z',
+                'createdBy' => 'agent1'
+            ]
+        ];
+
+        echo json_encode([
+            'success' => true,
+            'data' => [
+                'data' => $mockConversations,
+                'pagination' => [
+                    'page' => 1,
+                    'limit' => 50,
+                    'total' => count($mockConversations),
+                    'totalPages' => 1
+                ]
+            ]
+        ]);
+    } elseif ($method === 'POST') {
+        // Create new conversation
+        $newConversation = [
+            'id' => uniqid(),
+            'name' => $input['name'] ?? 'New Conversation',
+            'type' => $input['type'] ?? 'direct',
+            'participants' => [],
+            'lastActivity' => date('c'),
+            'isArchived' => false,
+            'isMuted' => false,
+            'createdAt' => date('c'),
+            'createdBy' => 'current_user'
+        ];
+
+        echo json_encode([
+            'success' => true,
+            'data' => $newConversation,
+            'message' => 'Conversation created successfully'
+        ]);
+    }
+}
+
+function handleSingleConversation($method, $conversationId, $input = []) {
+    if ($method === 'GET') {
+        // Return single conversation with detailed info
+        $conversation = [
+            'id' => $conversationId,
+            'name' => 'Sample Conversation',
+            'type' => 'property_inquiry',
+            'participants' => [
+                [
+                    'userId' => 'user1',
+                    'userName' => 'Sarah Johnson',
+                    'userRole' => 'client',
+                    'isActive' => true
+                ]
+            ],
+            'lastActivity' => '2024-07-27T14:30:00Z',
+            'isArchived' => false,
+            'isMuted' => false
+        ];
+
+        echo json_encode([
+            'success' => true,
+            'data' => $conversation
+        ]);
+    } elseif ($method === 'PUT') {
+        echo json_encode([
+            'success' => true,
+            'message' => 'Conversation updated successfully'
+        ]);
+    }
+}
+
+function handleConversationMessages($method, $conversationId, $input = []) {
+    if ($method === 'GET') {
+        // Return messages for conversation
+        $mockMessages = [
+            [
+                'id' => 'msg1',
+                'conversationId' => $conversationId,
+                'senderId' => 'user1',
+                'senderName' => 'Sarah Johnson',
+                'content' => 'Hi, I\'m interested in the property listing',
+                'messageType' => 'text',
+                'timestamp' => '2024-07-27T14:30:00Z',
+                'readBy' => ['agent1'],
+                'status' => 'delivered'
+            ],
+            [
+                'id' => 'msg2',
+                'conversationId' => $conversationId,
+                'senderId' => 'agent1',
+                'senderName' => 'Mike Agent',
+                'content' => 'Great! I\'d be happy to help. When would you like to schedule a viewing?',
+                'messageType' => 'text',
+                'timestamp' => '2024-07-27T14:35:00Z',
+                'readBy' => [],
+                'status' => 'sent'
+            ]
+        ];
+
+        echo json_encode([
+            'success' => true,
+            'data' => [
+                'data' => $mockMessages,
+                'pagination' => [
+                    'page' => 1,
+                    'limit' => 50,
+                    'total' => count($mockMessages),
+                    'totalPages' => 1
+                ]
+            ]
+        ]);
+    } elseif ($method === 'POST') {
+        // Send new message
+        $newMessage = [
+            'id' => uniqid(),
+            'conversationId' => $conversationId,
+            'senderId' => 'current_user',
+            'senderName' => 'Current User',
+            'content' => $input['content'] ?? '',
+            'messageType' => $input['messageType'] ?? 'text',
+            'timestamp' => date('c'),
+            'readBy' => [],
+            'status' => 'sent'
+        ];
+
+        echo json_encode([
+            'success' => true,
+            'data' => $newMessage,
+            'message' => 'Message sent successfully'
+        ]);
+    }
+}
+
+function handleConversationParticipants($method, $conversationId, $input = []) {
+    if ($method === 'POST') {
+        // Add participant
+        echo json_encode([
+            'success' => true,
+            'message' => 'Participant added successfully'
+        ]);
+    } elseif ($method === 'DELETE') {
+        // Remove participant (handled by specific user ID in URL)
+        echo json_encode([
+            'success' => true,
+            'message' => 'Participant removed successfully'
+        ]);
+    }
+}
+
+function handleDocuments($method, $input = []) {
+    if ($method === 'GET') {
+        // Return mock documents
+        $mockDocuments = [
+            [
+                'id' => '1',
+                'name' => 'Purchase Agreement - Johnson.pdf',
+                'description' => 'Purchase agreement for 123 Maple Street property',
+                'fileSize' => 2458752,
+                'fileType' => 'application/pdf',
+                'category' => 'contract',
+                'url' => '/documents/purchase-agreement-johnson.pdf',
+                'uploadedBy' => 'agent1',
+                'uploadedByName' => 'Mike Agent',
+                'uploadedAt' => '2024-07-27T10:30:00Z',
+                'tags' => ['contract', 'purchase', 'urgent'],
+                'relatedContactId' => '1',
+                'requiresSignature' => true,
+                'signatureStatus' => 'pending',
+                'sharePermissions' => [
+                    'viewerIds' => ['user1', 'agent1'],
+                    'editorIds' => ['agent1'],
+                    'signerIds' => ['user1'],
+                    'isPublic' => false
+                ],
+                'version' => 1
+            ],
+            [
+                'id' => '2',
+                'name' => 'Pre-Approval Letter - Downtown Condo.pdf',
+                'description' => 'Pre-approval letter from First National Bank',
+                'fileSize' => 1048576,
+                'fileType' => 'application/pdf',
+                'category' => 'financial',
+                'url' => '/documents/preapproval-downtown.pdf',
+                'uploadedBy' => 'lender1',
+                'uploadedByName' => 'First National Bank',
+                'uploadedAt' => '2024-07-27T13:15:00Z',
+                'tags' => ['preapproval', 'financing', 'complete'],
+                'requiresSignature' => true,
+                'signatureStatus' => 'complete',
+                'sharePermissions' => [
+                    'viewerIds' => ['user2', 'agent1', 'agent2', 'lender1'],
+                    'editorIds' => ['lender1'],
+                    'signerIds' => ['user2'],
+                    'isPublic' => false
+                ],
+                'version' => 1
+            ]
+        ];
+
+        echo json_encode([
+            'success' => true,
+            'data' => [
+                'data' => $mockDocuments,
+                'pagination' => [
+                    'page' => 1,
+                    'limit' => 50,
+                    'total' => count($mockDocuments),
+                    'totalPages' => 1
+                ]
+            ]
+        ]);
+    }
+}
+
+function handleDocumentUpload($method, $input = []) {
+    if ($method === 'POST') {
+        // Handle file upload (in real implementation, process $_FILES)
+        $newDocument = [
+            'id' => uniqid(),
+            'name' => $input['name'] ?? 'New Document',
+            'description' => $input['description'] ?? '',
+            'category' => $input['category'] ?? 'other',
+            'uploadedBy' => 'current_user',
+            'uploadedByName' => 'Current User',
+            'uploadedAt' => date('c'),
+            'requiresSignature' => $input['requiresSignature'] === 'true',
+            'signatureStatus' => $input['requiresSignature'] === 'true' ? 'pending' : null,
+            'version' => 1
+        ];
+
+        echo json_encode([
+            'success' => true,
+            'data' => $newDocument,
+            'message' => 'Document uploaded successfully'
+        ]);
+    }
+}
+
+function handleSingleDocument($method, $documentId, $input = []) {
+    if ($method === 'GET') {
+        $document = [
+            'id' => $documentId,
+            'name' => 'Sample Document.pdf',
+            'category' => 'contract',
+            'uploadedBy' => 'agent1',
+            'uploadedByName' => 'Mike Agent',
+            'uploadedAt' => '2024-07-27T10:30:00Z'
+        ];
+
+        echo json_encode([
+            'success' => true,
+            'data' => $document
+        ]);
+    } elseif ($method === 'PUT') {
+        echo json_encode([
+            'success' => true,
+            'message' => 'Document updated successfully'
+        ]);
+    } elseif ($method === 'DELETE') {
+        echo json_encode([
+            'success' => true,
+            'message' => 'Document deleted successfully'
+        ]);
+    }
+}
+
+function handleDocumentShare($method, $documentId, $input = []) {
+    if ($method === 'POST') {
+        echo json_encode([
+            'success' => true,
+            'message' => 'Document shared successfully'
+        ]);
+    }
+}
+
+function handleNotifications($method, $input = []) {
+    if ($method === 'GET') {
+        $mockNotifications = [
+            [
+                'id' => '1',
+                'type' => 'signature_request',
+                'title' => 'Signature Required',
+                'message' => 'Purchase Agreement - Johnson.pdf requires your signature',
+                'timestamp' => '2024-07-27T15:00:00Z',
+                'isRead' => false,
+                'userId' => 'current_user',
+                'actionUrl' => '/documents/1/sign',
+                'relatedEntityId' => '1',
+                'relatedEntityType' => 'document',
+                'priority' => 'high',
+                'category' => 'documents'
+            ],
+            [
+                'id' => '2',
+                'type' => 'message',
+                'title' => 'New Message',
+                'message' => 'Sarah Johnson sent a message in Johnson Property Inquiry',
+                'timestamp' => '2024-07-27T14:30:00Z',
+                'isRead' => false,
+                'userId' => 'current_user',
+                'actionUrl' => '/communications/conversations/1',
+                'relatedEntityId' => '1',
+                'relatedEntityType' => 'conversation',
+                'priority' => 'medium',
+                'category' => 'communication'
+            ]
+        ];
+
+        echo json_encode([
+            'success' => true,
+            'data' => [
+                'data' => $mockNotifications,
+                'pagination' => [
+                    'page' => 1,
+                    'limit' => 50,
+                    'total' => count($mockNotifications),
+                    'totalPages' => 1
+                ]
+            ]
+        ]);
+    }
+}
+
+function handleSingleNotification($method, $notificationId, $input = []) {
+    if ($method === 'PATCH') {
+        echo json_encode([
+            'success' => true,
+            'message' => 'Notification updated successfully'
+        ]);
+    } elseif ($method === 'DELETE') {
+        echo json_encode([
+            'success' => true,
+            'message' => 'Notification deleted successfully'
+        ]);
+    }
+}
+
+function handleCommunicationStats($method) {
+    if ($method === 'GET') {
+        $stats = [
+            'totalConversations' => 3,
+            'activeConversations' => 3,
+            'unreadMessages' => 5,
+            'pendingDocuments' => 1,
+            'documentsAwaitingSignature' => 1,
+            'totalDocuments' => 2,
+            'recentActivity' => [
+                ['type' => 'message', 'count' => 12, 'timestamp' => '2024-07-27T15:00:00Z'],
+                ['type' => 'document_upload', 'count' => 3, 'timestamp' => '2024-07-27T14:00:00Z'],
+                ['type' => 'signature_complete', 'count' => 2, 'timestamp' => '2024-07-27T13:00:00Z']
+            ]
+        ];
+
+        echo json_encode([
+            'success' => true,
+            'data' => $stats
+        ]);
+    }
+}
+
+function handleCommunicationPreferences($method, $input = []) {
+    if ($method === 'GET') {
+        $preferences = [
+            'userId' => 'current_user',
+            'emailNotifications' => true,
+            'pushNotifications' => true,
+            'smsNotifications' => false,
+            'notificationTypes' => [
+                'messages' => true,
+                'documentUpdates' => true,
+                'signatureRequests' => true,
+                'milestoneAlerts' => true,
+                'taskAssignments' => true
+            ],
+            'quietHours' => [
+                'enabled' => false,
+                'startTime' => '22:00',
+                'endTime' => '08:00'
+            ]
+        ];
+
+        echo json_encode([
+            'success' => true,
+            'data' => $preferences
+        ]);
+    } elseif ($method === 'PUT') {
+        echo json_encode([
+            'success' => true,
+            'message' => 'Preferences updated successfully'
+        ]);
+    }
+}
+
+// ===== PROPERTY SEARCH HANDLERS =====
+
+function handlePropertySearch($input) {
+    // Extract search parameters
+    $query = $input['query'] ?? '';
+    $filters = $input['filters'] ?? [];
+    $location = $input['location'] ?? '';
+    $priceMin = $filters['priceMin'] ?? null;
+    $priceMax = $filters['priceMax'] ?? null;
+    $propertyType = $filters['propertyType'] ?? '';
+    $bedrooms = $filters['bedrooms'] ?? null;
+    $bathrooms = $filters['bathrooms'] ?? null;
+    $sqftMin = $filters['sqftMin'] ?? null;
+    $sqftMax = $filters['sqftMax'] ?? null;
+    $yearBuiltMin = $filters['yearBuiltMin'] ?? null;
+    $yearBuiltMax = $filters['yearBuiltMax'] ?? null;
+    $features = $filters['features'] ?? [];
+    
+    // Mock property data based on search
+    $properties = [
+        [
+            'id' => 'prop1',
+            'mlsNumber' => 'MLS123456',
+            'address' => '123 Maple Street',
+            'city' => 'Downtown',
+            'state' => 'CA',
+            'zipCode' => '90210',
+            'price' => 450000,
+            'propertyType' => 'Single Family Home',
+            'bedrooms' => 3,
+            'bathrooms' => 2,
+            'sqft' => 1800,
+            'lotSize' => 0.25,
+            'yearBuilt' => 2015,
+            'status' => 'Active',
+            'listingAgent' => 'Sarah Johnson',
+            'listingAgentId' => 'agent1',
+            'daysOnMarket' => 15,
+            'features' => ['Garage', 'Fireplace', 'Hardwood Floors', 'Updated Kitchen'],
+            'description' => 'Beautiful 3BR/2BA home in desirable downtown location with modern updates throughout.',
+            'images' => [
+                '/api/images/prop1-1.jpg',
+                '/api/images/prop1-2.jpg',
+                '/api/images/prop1-3.jpg'
+            ],
+            'virtualTourUrl' => 'https://tour.example.com/prop1',
+            'schoolDistrict' => 'Downtown Elementary School',
+            'coordinates' => ['lat' => 40.7128, 'lng' => -74.0060],
+            'matchScore' => 95,
+            'listingDate' => '2024-07-12T00:00:00Z',
+            'lastModified' => '2024-07-25T10:30:00Z'
+        ],
+        [
+            'id' => 'prop2',
+            'mlsNumber' => 'MLS789012',
+            'address' => '456 Oak Avenue',
+            'city' => 'Midtown',
+            'state' => 'CA',
+            'zipCode' => '90211',
+            'price' => 375000,
+            'propertyType' => 'Condo',
+            'bedrooms' => 2,
+            'bathrooms' => 2,
+            'sqft' => 1200,
+            'lotSize' => null,
+            'yearBuilt' => 2010,
+            'status' => 'Active',
+            'listingAgent' => 'Mike Chen',
+            'listingAgentId' => 'agent2',
+            'daysOnMarket' => 8,
+            'features' => ['Balcony', 'In-unit Laundry', 'Granite Countertops', 'Stainless Appliances'],
+            'description' => 'Modern 2BR/2BA condo with stunning city views and luxury amenities.',
+            'images' => [
+                '/api/images/prop2-1.jpg',
+                '/api/images/prop2-2.jpg'
+            ],
+            'virtualTourUrl' => null,
+            'schoolDistrict' => 'Midtown High School',
+            'coordinates' => ['lat' => 40.7589, 'lng' => -73.9851],
+            'matchScore' => 88,
+            'listingDate' => '2024-07-19T00:00:00Z',
+            'lastModified' => '2024-07-26T14:15:00Z'
+        ],
+        [
+            'id' => 'prop3',
+            'mlsNumber' => 'MLS345678',
+            'address' => '789 Pine Lane',
+            'city' => 'Suburbs',
+            'state' => 'CA',
+            'zipCode' => '90212',
+            'price' => 525000,
+            'propertyType' => 'Single Family Home',
+            'bedrooms' => 4,
+            'bathrooms' => 3,
+            'sqft' => 2200,
+            'lotSize' => 0.4,
+            'yearBuilt' => 2018,
+            'status' => 'Active',
+            'listingAgent' => 'Lisa Rodriguez',
+            'listingAgentId' => 'agent3',
+            'daysOnMarket' => 22,
+            'features' => ['Pool', 'Garage', 'Walk-in Closets', 'Modern Kitchen', 'Backyard'],
+            'description' => 'Spacious 4BR/3BA family home with pool in quiet suburban neighborhood.',
+            'images' => [
+                '/api/images/prop3-1.jpg',
+                '/api/images/prop3-2.jpg',
+                '/api/images/prop3-3.jpg',
+                '/api/images/prop3-4.jpg'
+            ],
+            'virtualTourUrl' => 'https://tour.example.com/prop3',
+            'schoolDistrict' => 'Suburban Elementary & High School',
+            'coordinates' => ['lat' => 40.6892, 'lng' => -74.0445],
+            'matchScore' => 82,
+            'listingDate' => '2024-07-05T00:00:00Z',
+            'lastModified' => '2024-07-24T09:20:00Z'
+        ]
+    ];
+    
+    // Filter properties based on search criteria
+    $filteredProperties = array_filter($properties, function($property) use ($priceMin, $priceMax, $propertyType, $bedrooms, $bathrooms, $sqftMin, $sqftMax, $yearBuiltMin, $yearBuiltMax, $location) {
+        if ($priceMin && $property['price'] < $priceMin) return false;
+        if ($priceMax && $property['price'] > $priceMax) return false;
+        if ($propertyType && $property['propertyType'] !== $propertyType) return false;
+        if ($bedrooms && $property['bedrooms'] < $bedrooms) return false;
+        if ($bathrooms && $property['bathrooms'] < $bathrooms) return false;
+        if ($sqftMin && $property['sqft'] < $sqftMin) return false;
+        if ($sqftMax && $property['sqft'] > $sqftMax) return false;
+        if ($yearBuiltMin && $property['yearBuilt'] < $yearBuiltMin) return false;
+        if ($yearBuiltMax && $property['yearBuilt'] > $yearBuiltMax) return false;
+        if ($location && stripos($property['city'], $location) === false) return false;
+        
+        return true;
+    });
+    
+    // Sort by match score
+    usort($filteredProperties, function($a, $b) {
+        return $b['matchScore'] - $a['matchScore'];
+    });
+    
+    echo json_encode([
+        'success' => true,
+        'data' => [
+            'properties' => array_values($filteredProperties),
+            'totalResults' => count($filteredProperties),
+            'searchQuery' => $query,
+            'appliedFilters' => $filters,
+            'searchTimestamp' => date('c')
+        ]
+    ]);
+}
+
+function handleSavedSearches($method, $input = []) {
+    if ($method === 'GET') {
+        $savedSearches = [
+            [
+                'id' => 'search1',
+                'name' => 'Downtown Condos Under $400K',
+                'query' => 'downtown condo',
+                'filters' => [
+                    'priceMax' => 400000,
+                    'propertyType' => 'Condo',
+                    'location' => 'Downtown'
+                ],
+                'alertsEnabled' => true,
+                'alertFrequency' => 'daily',
+                'createdAt' => '2024-07-20T10:00:00Z',
+                'lastRun' => '2024-07-27T08:00:00Z',
+                'newMatches' => 2
+            ],
+            [
+                'id' => 'search2',
+                'name' => 'Family Homes with Pool',
+                'query' => 'family home pool',
+                'filters' => [
+                    'priceMin' => 400000,
+                    'priceMax' => 600000,
+                    'propertyType' => 'Single Family Home',
+                    'bedrooms' => 3,
+                    'features' => ['Pool']
+                ],
+                'alertsEnabled' => false,
+                'alertFrequency' => 'weekly',
+                'createdAt' => '2024-07-15T14:30:00Z',
+                'lastRun' => '2024-07-26T08:00:00Z',
+                'newMatches' => 0
+            ]
+        ];
+        
+        echo json_encode([
+            'success' => true,
+            'data' => $savedSearches
+        ]);
+    } elseif ($method === 'POST') {
+        // Create new saved search
+        $newSearch = [
+            'id' => uniqid(),
+            'name' => $input['name'] ?? 'Untitled Search',
+            'query' => $input['query'] ?? '',
+            'filters' => $input['filters'] ?? [],
+            'alertsEnabled' => $input['alertsEnabled'] ?? false,
+            'alertFrequency' => $input['alertFrequency'] ?? 'daily',
+            'createdAt' => date('c'),
+            'lastRun' => null,
+            'newMatches' => 0
+        ];
+        
+        echo json_encode([
+            'success' => true,
+            'data' => $newSearch,
+            'message' => 'Saved search created successfully'
+        ]);
+    }
+}
+
+function handleDeleteSavedSearch($searchId) {
+    echo json_encode([
+        'success' => true,
+        'message' => 'Saved search deleted successfully'
+    ]);
+}
+
+function handlePropertyRecommendations() {
+    // Mock recommendations based on client preferences
+    $recommendations = [
+        [
+            'id' => 'rec1',
+            'propertyId' => 'prop1',
+            'clientId' => '1',
+            'clientName' => 'Sarah Johnson',
+            'matchScore' => 95,
+            'reasonsMatched' => [
+                'Budget match: $450K within $300K-$500K range',
+                'Location preference: Downtown area',
+                'Property type: Single Family Home',
+                'Timeline: Available within 3 months'
+            ],
+            'recommendedAt' => '2024-07-27T10:00:00Z',
+            'status' => 'pending'
+        ],
+        [
+            'id' => 'rec2',
+            'propertyId' => 'prop2',
+            'clientId' => '2',
+            'clientName' => 'Michael Brown',
+            'matchScore' => 88,
+            'reasonsMatched' => [
+                'Investment property type',
+                'Price range match: $375K within budget',
+                'Good rental potential in Midtown',
+                'Modern amenities as requested'
+            ],
+            'recommendedAt' => '2024-07-27T09:30:00Z',
+            'status' => 'viewed'
+        ]
+    ];
+    
+    echo json_encode([
+        'success' => true,
+        'data' => $recommendations
+    ]);
+}
+
+function handlePropertySearchStats() {
+    $stats = [
+        'totalSearches' => 147,
+        'searchesToday' => 23,
+        'savedSearches' => 8,
+        'activeAlerts' => 5,
+        'matchesFound' => 89,
+        'propertiesViewed' => 45,
+        'showingsScheduled' => 12,
+        'averageMatchScore' => 82.5,
+        'topSearchTerms' => [
+            ['term' => 'downtown', 'count' => 34],
+            ['term' => 'condo', 'count' => 28],
+            ['term' => 'pool', 'count' => 19],
+            ['term' => 'garage', 'count' => 16]
+        ],
+        'priceRangeDistribution' => [
+            ['range' => '$0-$300K', 'count' => 12],
+            ['range' => '$300K-$500K', 'count' => 45],
+            ['range' => '$500K-$700K', 'count' => 31],
+            ['range' => '$700K+', 'count' => 15]
+        ]
+    ];
+    
+    echo json_encode([
+        'success' => true,
+        'data' => $stats
+    ]);
+}
+
+function handleSearchFilters() {
+    $filters = [
+        'propertyTypes' => [
+            'Single Family Home',
+            'Condo',
+            'Townhouse',
+            'Multi-Family',
+            'Investment Property',
+            'Luxury Home',
+            'New Construction'
+        ],
+        'priceRanges' => [
+            ['label' => 'Under $300K', 'min' => 0, 'max' => 300000],
+            ['label' => '$300K - $500K', 'min' => 300000, 'max' => 500000],
+            ['label' => '$500K - $700K', 'min' => 500000, 'max' => 700000],
+            ['label' => '$700K - $1M', 'min' => 700000, 'max' => 1000000],
+            ['label' => '$1M+', 'min' => 1000000, 'max' => null]
+        ],
+        'bedrooms' => [1, 2, 3, 4, 5, '5+'],
+        'bathrooms' => [1, 1.5, 2, 2.5, 3, 3.5, 4, '4+'],
+        'features' => [
+            'Pool',
+            'Garage',
+            'Fireplace',
+            'Hardwood Floors',
+            'Updated Kitchen',
+            'Stainless Appliances',
+            'Granite Countertops',
+            'Walk-in Closets',
+            'Balcony',
+            'Backyard',
+            'In-unit Laundry',
+            'Air Conditioning',
+            'Central Heating'
+        ],
+        'locations' => [
+            'Downtown',
+            'Midtown',
+            'Suburbs',
+            'West End',
+            'North District',
+            'South Bay',
+            'Waterfront',
+            'Historic District'
+        ]
+    ];
+    
+    echo json_encode([
+        'success' => true,
+        'data' => $filters
+    ]);
+}
+
+function handleMLSData() {
+    // Mock MLS data sync status
+    $mlsData = [
+        'lastSync' => '2024-07-27T06:00:00Z',
+        'nextSync' => '2024-07-27T18:00:00Z',
+        'syncFrequency' => 'every 12 hours',
+        'totalProperties' => 1247,
+        'newListings' => 15,
+        'priceChanges' => 8,
+        'statusChanges' => 12,
+        'removedListings' => 3,
+        'syncStatus' => 'active',
+        'dataProviders' => [
+            ['name' => 'Regional MLS', 'status' => 'connected', 'lastSync' => '2024-07-27T06:00:00Z'],
+            ['name' => 'Local Board MLS', 'status' => 'connected', 'lastSync' => '2024-07-27T06:00:00Z'],
+            ['name' => 'Commercial MLS', 'status' => 'connected', 'lastSync' => '2024-07-27T05:45:00Z']
+        ]
+    ];
+    
+    echo json_encode([
+        'success' => true,
+        'data' => $mlsData
+    ]);
+}
+?>

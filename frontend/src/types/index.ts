@@ -293,6 +293,150 @@ export interface CalendarEvent {
   relatedOpportunityName?: string
 }
 
+// Communication types for Feature 4
+export interface Message {
+  id: string
+  conversationId: string
+  senderId: string
+  senderName: string
+  senderAvatar?: string
+  content: string
+  messageType: MessageType
+  timestamp: string
+  readBy: string[] // Array of user IDs who read the message
+  attachments?: MessageAttachment[]
+  replyToId?: string // For threaded conversations
+  status: MessageStatus
+}
+
+export type MessageType = 'text' | 'document' | 'image' | 'system_notification' | 'milestone_update'
+export type MessageStatus = 'sent' | 'delivered' | 'read' | 'failed'
+
+export interface MessageAttachment {
+  id: string
+  fileName: string
+  fileSize: number
+  fileType: string
+  url: string
+  uploadedAt: string
+}
+
+export interface Conversation {
+  id: string
+  name: string
+  type: ConversationType
+  participants: ConversationParticipant[]
+  lastMessage?: Message
+  lastActivity: string
+  isArchived: boolean
+  isMuted: boolean
+  relatedPropertyId?: string
+  relatedPropertyAddress?: string
+  relatedContactId?: string
+  relatedContactName?: string
+  createdAt: string
+  createdBy: string
+}
+
+export type ConversationType = 'direct' | 'group' | 'transaction_team' | 'property_inquiry'
+
+export interface ConversationParticipant {
+  userId: string
+  userName: string
+  userRole: string
+  userAvatar?: string
+  joinedAt: string
+  isActive: boolean
+  permissions: ParticipantPermissions
+}
+
+export interface ParticipantPermissions {
+  canAddParticipants: boolean
+  canRemoveParticipants: boolean
+  canUploadDocuments: boolean
+  canCreateTasks: boolean
+  canViewAllMessages: boolean
+}
+
+export interface Document {
+  id: string
+  name: string
+  description?: string
+  fileSize: number
+  fileType: string
+  category: DocumentCategory
+  url: string
+  uploadedBy: string
+  uploadedByName: string
+  uploadedAt: string
+  tags: string[]
+  relatedContactId?: string
+  relatedPropertyId?: string
+  requiresSignature: boolean
+  signatureStatus?: SignatureStatus
+  signedBy?: DocumentSignature[]
+  sharePermissions: DocumentPermissions
+  version: number
+  previousVersions?: string[]
+}
+
+export type DocumentCategory = 'contract' | 'listing' | 'inspection' | 'financial' | 'legal' | 'marketing' | 'other'
+export type SignatureStatus = 'pending' | 'partial' | 'complete' | 'declined'
+
+export interface DocumentSignature {
+  signerId: string
+  signerName: string
+  signerEmail: string
+  signedAt: string
+  signatureType: 'electronic' | 'digital' | 'physical'
+  ipAddress?: string
+}
+
+export interface DocumentPermissions {
+  viewerIds: string[]
+  editorIds: string[]
+  signerIds: string[]
+  isPublic: boolean
+}
+
+export interface Notification {
+  id: string
+  type: NotificationType
+  title: string
+  message: string
+  timestamp: string
+  isRead: boolean
+  userId: string
+  actionUrl?: string
+  relatedEntityId?: string
+  relatedEntityType?: string
+  priority: NotificationPriority
+  category: NotificationCategory
+}
+
+export type NotificationType = 'message' | 'document_shared' | 'signature_request' | 'milestone_reached' | 'task_assigned' | 'property_update'
+export type NotificationPriority = 'low' | 'medium' | 'high' | 'urgent'
+export type NotificationCategory = 'communication' | 'documents' | 'transactions' | 'system' | 'property'
+
+export interface CommunicationPreferences {
+  userId: string
+  emailNotifications: boolean
+  pushNotifications: boolean
+  smsNotifications: boolean
+  notificationTypes: {
+    messages: boolean
+    documentUpdates: boolean
+    signatureRequests: boolean
+    milestoneAlerts: boolean
+    taskAssignments: boolean
+  }
+  quietHours: {
+    enabled: boolean
+    startTime: string // HH:mm format
+    endTime: string // HH:mm format
+  }
+}
+
 // Activity types
 export type ActivityType = 'Call' | 'Email' | 'Meeting' | 'Task' | 'Note' | 'Property Showing'
 
@@ -353,4 +497,121 @@ export interface NavItem {
   icon: React.ComponentType<{ className?: string }>
   current?: boolean
   badge?: number
+}
+
+// Property Search types - extending existing Property interface
+export interface PropertySearchListing extends Property {
+  price: number // alias for listingPrice
+  sqft: number // alias for squareFootage
+  lotSize?: number
+  daysOnMarket: number
+  listingAgent: string
+  virtualTourUrl?: string
+  schoolDistrict?: string
+  coordinates: {
+    lat: number
+    lng: number
+  }
+  matchScore?: number
+  listingDate: string
+}
+
+export interface PropertySearchFilters {
+  priceMin?: number
+  priceMax?: number
+  propertyType?: string
+  bedrooms?: number
+  bathrooms?: number
+  sqftMin?: number
+  sqftMax?: number
+  yearBuiltMin?: number
+  yearBuiltMax?: number
+  features?: string[]
+  location?: string
+}
+
+export interface PropertySearchQuery {
+  query: string
+  filters: PropertySearchFilters
+  location?: string
+}
+
+export interface PropertySearchResults {
+  properties: PropertySearchListing[]
+  totalResults: number
+  searchQuery: string
+  appliedFilters: PropertySearchFilters
+  searchTimestamp: string
+}
+
+export interface SavedSearch {
+  id: string
+  name: string
+  query: string
+  filters: PropertySearchFilters
+  alertsEnabled: boolean
+  alertFrequency: 'daily' | 'weekly' | 'instant'
+  createdAt: string
+  lastRun?: string
+  newMatches: number
+}
+
+export interface PropertyRecommendation {
+  id: string
+  propertyId: string
+  clientId: string
+  clientName: string
+  matchScore: number
+  reasonsMatched: string[]
+  recommendedAt: string
+  status: 'pending' | 'viewed' | 'interested' | 'dismissed'
+}
+
+export interface PropertySearchStats {
+  totalSearches: number
+  searchesToday: number
+  savedSearches: number
+  activeAlerts: number
+  matchesFound: number
+  propertiesViewed: number
+  showingsScheduled: number
+  averageMatchScore: number
+  topSearchTerms: Array<{
+    term: string
+    count: number
+  }>
+  priceRangeDistribution: Array<{
+    range: string
+    count: number
+  }>
+}
+
+export interface SearchFilters {
+  propertyTypes: string[]
+  priceRanges: Array<{
+    label: string
+    min: number
+    max: number | null
+  }>
+  bedrooms: (number | string)[]
+  bathrooms: (number | string)[]
+  features: string[]
+  locations: string[]
+}
+
+export interface MLSData {
+  lastSync: string
+  nextSync: string
+  syncFrequency: string
+  totalProperties: number
+  newListings: number
+  priceChanges: number
+  statusChanges: number
+  removedListings: number
+  syncStatus: 'active' | 'syncing' | 'error'
+  dataProviders: Array<{
+    name: string
+    status: 'connected' | 'disconnected' | 'error'
+    lastSync: string
+  }>
 }

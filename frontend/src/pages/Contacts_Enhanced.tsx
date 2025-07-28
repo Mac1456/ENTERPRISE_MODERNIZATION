@@ -466,9 +466,9 @@ export default function ContactsEnhanced() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {/* Header Section */}
-        <div className="mb-8">
+        <div>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Contact Management</h1>
@@ -488,85 +488,63 @@ export default function ContactsEnhanced() {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <Card className="shadow-sm hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <UsersIcon className="h-6 w-6 text-blue-600" />
-                    </div>
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Total Contacts</p>
-                    <p className="text-2xl font-bold text-gray-900">{contacts.length}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+        {/* Stats Cards (following exact pattern from Leads_Enhanced.tsx) */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs sm:text-sm font-medium">Total Contacts</CardTitle>
+              <UsersIcon className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-xl sm:text-2xl font-bold">{contacts.length}</div>
+              <p className="text-xs text-muted-foreground">Active in system</p>
+            </CardContent>
+          </Card>
 
-            <Card className="shadow-sm hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                      <HeartIcon className="h-6 w-6 text-green-600" />
-                    </div>
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Active Interests</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {contacts.reduce((total, contact) => total + contact.propertyInterests.length, 0)}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs sm:text-sm font-medium">Active Interests</CardTitle>
+              <HeartIcon className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-xl sm:text-2xl font-bold text-green-600">
+                {contacts.reduce((total, contact) => total + contact.propertyInterests.length, 0)}
+              </div>
+              <p className="text-xs text-muted-foreground">Property interests</p>
+            </CardContent>
+          </Card>
 
-            <Card className="shadow-sm hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                      <StarIcon className="h-6 w-6 text-yellow-600" />
-                    </div>
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">High Priority</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {contacts.reduce((total, contact) => 
-                        total + contact.propertyInterests.filter(interest => interest.priority === 'High').length, 0
-                      )}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs sm:text-sm font-medium">High Priority</CardTitle>
+              <StarIcon className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-xl sm:text-2xl font-bold text-orange-600">
+                {contacts.reduce((total, contact) => 
+                  total + contact.propertyInterests.filter(interest => interest.priority === 'High').length, 0
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">High priority contacts</p>
+            </CardContent>
+          </Card>
 
-            <Card className="shadow-sm hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                      <MapPinIcon className="h-6 w-6 text-purple-600" />
-                    </div>
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Locations</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {new Set(contacts.flatMap(contact => contact.preferredLocations)).size}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs sm:text-sm font-medium">Locations</CardTitle>
+              <MapPinIcon className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-xl sm:text-2xl font-bold text-purple-600">
+                {new Set(contacts.flatMap(contact => contact.preferredLocations)).size}
+              </div>
+              <p className="text-xs text-muted-foreground">Preferred areas</p>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Search and Filters */}
-        <div className="mb-6">
+        <div>
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
@@ -649,6 +627,8 @@ export default function ContactsEnhanced() {
           </div>
         </motion.div>
       )}
+
+
 
       {/* Bulk Actions Bar */}
       {showBulkActions && (

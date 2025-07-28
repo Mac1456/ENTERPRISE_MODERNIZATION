@@ -13,6 +13,8 @@ import {
   CogIcon,
   PhoneIcon,
   XMarkIcon,
+  ChatBubbleLeftRightIcon,
+  MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline'
 import { useLeadCount } from '@/hooks/useLeadCount'
 
@@ -27,6 +29,8 @@ const navigation: NavigationItem[] = [
   { name: 'Dashboard', href: '/', icon: HomeIcon },
   { name: 'Leads', href: '/leads', icon: UserPlusIcon }, // Badge will be added dynamically
   { name: 'Contacts', href: '/contacts', icon: UsersIcon },
+  { name: 'Communications', href: '/communications', icon: ChatBubbleLeftRightIcon },
+  { name: 'Property Search', href: '/property-search', icon: MagnifyingGlassIcon },
   { name: 'Accounts', href: '/accounts', icon: BuildingOffice2Icon },
   { name: 'Properties', href: '/properties', icon: BuildingOffice2Icon },
   { name: 'Opportunities', href: '/opportunities', icon: ChartBarIcon },

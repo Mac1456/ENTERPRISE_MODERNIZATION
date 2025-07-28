@@ -395,4 +395,73 @@ Please start by thoroughly reading all the documentation files listed above (use
 
 ---
 
+## 🚀 CONTINUATION AI DEVELOPMENT PROMPT (For New Threads)
+
+Use this prompt to resume development from Feature 4 onward. This will ensure all work is consistent, professional, and leverages the established technical foundation.
+
+```
+CONTEXT: SuiteCRM Real Estate Pro Modernization Project — CONTINUATION
+
+WHAT HAS BEEN ACCOMPLISHED:
+- ✅ Feature 1: UI Modernization & Core Functionality (React/TypeScript, Tailwind, mobile-responsive, dual layout system)
+- ✅ Feature 2: Intelligent Lead Capture & Auto-Assignment (real-time assignment, React Query, Docker persistence)
+- ✅ Feature 3: Property-Centric Contact Management (advanced contact profiles, property interest tracking, bulk assignment, mobile-responsive, real-time updates)
+- ✅ Feature 4: Real-Time Communication Hub (in-app messaging, document sharing, e-signature workflow, notifications, mobile-responsive, React Query integration)
+- ✅ Feature 5: Advanced Property Search & Matching (smart property search, client preference matching, saved searches, MLS integration, property recommendations)
+- All code follows established patterns for UI, state management, API integration, and Docker file persistence.
+- All documentation is up to date and clearly marked with required reading order.
+- UI consistency improved: All stats cards across all pages now follow the same centered text pattern
+
+WHAT TO DO NEXT:
+- Begin with Feature 6: Transaction Pipeline Management (see PRD and Checklist for requirements)
+- For each new feature, replicate the proven patterns from Features 1-4 for UI, API, state, and persistence
+
+RULES TO FOLLOW:
+1. **Pattern Adherence:** All new code must follow the established patterns from Features 1-4 (see Leads_Enhanced.tsx, Contacts_Enhanced.tsx, Communications_Enhanced.tsx, CRMHubDataTable.tsx, and UI examples folder)
+2. **Mobile Responsiveness:** Use the dual layout system (`block md:hidden` for mobile cards, `hidden md:block` for desktop tables)
+3. **React Query:** Use cache invalidation and real-time updates after all mutations
+4. **API Design:** Extend backend/custom/modernui/api.php using the same RESTful, file-persistent, CORS-enabled patterns
+5. **Docker Persistence:** Store all dynamic data in the writable /cache/ directory in the Docker container
+6. **UI Consistency:** All new UI must match the look, feel, and interaction patterns of the current app (see UI examples folder)
+7. **Error Handling:** Use async/await, try-catch, toast notifications, and console logging for all business logic
+8. **Component Status:** Mark all new files with `✅ ACTIVE` or `⚠️ POTENTIALLY UNUSED` at the top
+9. **Documentation:** Update or create new documentation for any new patterns, features, or architectural changes
+10. **Branching:** Use one feature branch per major feature, merge to development, then to main/demo as per the branching strategy
+11. **Testing:** Write unit tests for all business logic and verify all new features on both mobile and desktop
+12. **No Breaking Changes:** Ask before making breaking changes to existing APIs
+13. **No ENV Changes:** Do not edit or duplicate env files
+
+REQUIRED DOCUMENTATION TO READ (in order):
+1. `DOCUMENTATION_ROADMAP.md` — Reading order and quick start
+2. `DEVELOPMENT_HANDOFF_COMPLETE.md` — Technical handoff, patterns, and insights
+3. `docs/PRD_SuiteCRM_Modernization.md` — Product requirements and feature specs
+4. `docs/Project_Checklist_SuiteCRM_Modernization.md` — Project progress and feature requirements
+5. `docs/ai-utilization/ai-development-log.md` — AI development methodology and techniques
+6. `BRAINLIFT_SuiteCRM_Modernization.md` — Key technical insights and patterns
+7. `frontend/src/pages/Leads_Enhanced.tsx` — Lead management UI (✅ ACTIVE)
+8. `frontend/src/pages/Contacts_Enhanced.tsx` — Contact management UI (✅ ACTIVE)
+9. `frontend/src/pages/Communications_Enhanced.tsx` — Communication hub UI (✅ ACTIVE)
+10. `backend/custom/modernui/api.php` — API bridge implementation
+11. `frontend/src/components/shared/CRMHubDataTable.tsx` — Responsive table component
+12. `frontend/ui-examples/` — UI examples folder for all current UI patterns
+
+HOW TO RESUME DEVELOPMENT:
+1. Read all required documentation above (use DOCUMENTATION_ROADMAP.md as your guide)
+2. Review the implementation of Features 1-3 to understand all established patterns
+3. For Feature 4, design the UI and API using the same structure and patterns as Features 1-3
+4. Implement, test, and document Feature 4, then proceed to Features 5 and 6 in the same way
+5. Always update documentation and mark new files/components appropriately
+6. Maintain code quality, consistency, and professional UI/UX at all times
+
+ENVIRONMENT:
+- Frontend dev server: `cd frontend && npm run dev` (localhost:3000)
+- Backend: Docker container suitecrm_app (localhost:8080)
+- API Bridge: backend/custom/modernui/api.php
+- Git branches: main (production), demo (working demo), feature branches
+
+If you are AMP or any future developer/AI, you must follow these instructions and patterns to ensure seamless, high-quality, and maintainable development for the remainder of the SuiteCRM Real Estate Pro Modernization Project.
+```
+
+---
+
 *This document contains all critical insights, patterns, and context needed to continue development seamlessly. The project has a solid foundation with proven patterns that should be replicated for remaining features.* 
