@@ -108,9 +108,9 @@ export default function ContactDetailModal({
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="w-full max-w-4xl transform overflow-hidden rounded-2xl bg-white text-left align-middle shadow-xl transition-all">
+              <Dialog.Panel className="w-full max-w-3xl max-h-[90vh] transform overflow-hidden rounded-2xl bg-white text-left align-middle shadow-xl transition-all flex flex-col">
                 {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                <div className="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0">
                   <div className="flex items-center space-x-4">
                     <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
                       <UserIcon className="w-6 h-6 text-blue-600" />
@@ -138,10 +138,10 @@ export default function ContactDetailModal({
                 </div>
 
                 {/* Content */}
-                <div className="p-6 max-h-[80vh] overflow-y-auto">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="p-4 overflow-y-auto flex-1">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     {/* Left Column */}
-                    <div className="space-y-6">
+                    <div className="space-y-4">
                       {/* Contact Information */}
                       <Card>
                         <CardHeader>
@@ -289,7 +289,7 @@ export default function ContactDetailModal({
                     </div>
 
                     {/* Right Column */}
-                    <div className="space-y-6">
+                    <div className="space-y-4">
                       {/* Property Interests */}
                       <Card>
                         <CardHeader className="flex flex-row items-center justify-between">
@@ -405,7 +405,7 @@ export default function ContactDetailModal({
                 </div>
 
                 {/* Footer Actions */}
-                <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50">
+                <div className="flex items-center justify-end space-x-3 p-4 border-t border-gray-200 bg-gray-50 flex-shrink-0">
                   <Button variant="outline" onClick={onClose}>
                     Close
                   </Button>
