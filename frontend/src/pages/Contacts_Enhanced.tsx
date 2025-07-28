@@ -38,6 +38,7 @@ import { Contact, PropertyInterest } from '@/types'
 import ContactCaptureModal from '@/components/contacts/ContactCaptureModal'
 import ContactAssignmentPanel from '@/components/contacts/ContactAssignmentPanel'
 import PropertyInterestModal from '@/components/contacts/PropertyInterestModal'
+import ContactDetailModal from '@/components/contacts/ContactDetailModal'
 import CRMHubDataTable from '@/components/shared/CRMHubDataTable'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -123,6 +124,7 @@ export default function ContactsEnhanced() {
   
   const [showCaptureModal, setShowCaptureModal] = useState(false)
   const [showPropertyInterestModal, setShowPropertyInterestModal] = useState(false)
+  const [showContactDetailModal, setShowContactDetailModal] = useState(false)
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
   const [showAssignmentPanel, setShowAssignmentPanel] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -218,6 +220,12 @@ export default function ContactsEnhanced() {
       setSelectedContactIds([])
       setIsAllSelected(false)
     }
+  }
+
+  // Contact detail modal handler (following PropertySearch pattern)
+  const handleContactClick = (contact: Contact) => {
+    setSelectedContact(contact)
+    setShowContactDetailModal(true)
   }
 
   // Use mock data if API fails or returns empty
@@ -425,7 +433,10 @@ export default function ContactsEnhanced() {
       width: '100px',
       render: (_: any, contact: Contact) => (
         <Menu as="div" className="relative">
-          <Menu.Button className="p-2 hover:bg-gray-100 rounded-lg">
+          <Menu.Button 
+            className="p-2 hover:bg-gray-100 rounded-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
             <EllipsisVerticalIcon className="w-5 h-5" />
           </Menu.Button>
           <Menu.Items className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-10">
@@ -433,7 +444,8 @@ export default function ContactsEnhanced() {
               {({ active }) => (
                 <button
                   className={`${active ? 'bg-gray-100' : ''} flex items-center w-full px-4 py-2 text-sm text-gray-700`}
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation()
                     setSelectedContact(contact)
                     setShowPropertyInterestModal(true)
                   }}
@@ -447,7 +459,8 @@ export default function ContactsEnhanced() {
               {({ active }) => (
                 <button
                   className={`${active ? 'bg-gray-100' : ''} flex items-center w-full px-4 py-2 text-sm text-gray-700`}
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation()
                     setSelectedContact(contact)
                     setSelectedContactIds([contact.id])
                     setShowAssignmentPanel(true)
@@ -673,9 +686,10 @@ export default function ContactsEnhanced() {
             <CRMHubDataTable
               columns={columns}
               data={filteredContacts}
-              isLoading={isLoading}
+              loading={isLoading}
               onSelectAll={handleSelectAll}
               isAllSelected={isAllSelected}
+              onRowClick={handleContactClick}
               emptyState={{
                 title: "No contacts found",
                 description: "Get started by adding your first contact.",
@@ -714,6 +728,29 @@ export default function ContactsEnhanced() {
             onClose={() => setShowAssignmentPanel(false)}
             contactIds={selectedContactIds}
             onAssign={handleContactAssignment}
+          />
+        )}
+
+        {showContactDetailModal && selectedContact && (
+          <ContactDetailModal
+            isOpen={showContactDetailModal}
+            onClose={() => setShowContactDetailModal(false)}
+            contact={selectedContact}
+            onEdit={(contact) => {
+              setShowContactDetailModal(false)
+              // Handle edit functionality here
+            }}
+            onAddPropertyInterest={(contact) => {
+              setShowContactDetailModal(false)
+              setSelectedContact(contact)
+              setShowPropertyInterestModal(true)
+            }}
+            onAssign={(contact) => {
+              setShowContactDetailModal(false)
+              setSelectedContact(contact)
+              setSelectedContactIds([contact.id])
+              setShowAssignmentPanel(true)
+            }}
           />
         )}
       </div>
