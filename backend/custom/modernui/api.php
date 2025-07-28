@@ -228,7 +228,14 @@ if (strpos($apiPath, '/leads') === 0) {
         handleLeads($method, $input);
     }
 } elseif (strpos($apiPath, '/contacts') === 0) {
-    handleContacts($method);
+    $contactId = str_replace('/contacts', '', $apiPath);
+    if ($contactId === '/assign' && $method === 'POST') {
+        handleContactBulkAssign($input);
+    } elseif ($contactId && $contactId !== '/') {
+        handleSingleContact($method, trim($contactId, '/'), $input);
+    } else {
+        handleContacts($method, $input);
+    }
 } elseif (strpos($apiPath, '/opportunities') === 0) {
     handleOpportunities($method);
 } elseif (strpos($apiPath, '/dashboard/stats') === 0) {
@@ -443,12 +450,153 @@ function handleBulkAssign($input) {
     ]);
 }
 
-function handleContacts($method) {
-    echo json_encode([
-        'success' => true,
-        'data' => [],
-        'pagination' => ['page' => 1, 'limit' => 10, 'total' => 0, 'pages' => 1]
-    ]);
+function handleContacts($method, $input = []) {
+    if ($method === 'GET') {
+        // Base mock contact data with property interests
+        $mockContacts = [
+            [
+                'id' => '1',
+                'firstName' => 'Sarah',
+                'lastName' => 'Johnson',
+                'email' => 'sarah.johnson@email.com',
+                'phone' => '555-123-4567',
+                'mobile' => '555-987-6543',
+                'title' => 'Senior Developer',
+                'description' => 'Looking for first-time home purchase',
+                'accountId' => 'acc1',
+                'accountName' => 'Tech Solutions Inc',
+                'propertyInterests' => [
+                    [
+                        'id' => 'pi1',
+                        'propertyType' => 'Single Family Home',
+                        'budget' => ['min' => 300000, 'max' => 500000],
+                        'location' => 'Downtown',
+                        'timeline' => 'Within 3 months',
+                        'status' => 'Active',
+                        'priority' => 'High'
+                    ]
+                ],
+                'buyerProfile' => [
+                    'isFirstTimeBuyer' => true,
+                    'financingApproved' => false,
+                    'preApprovalAmount' => 450000,
+                    'downPaymentReady' => true,
+                    'creditScore' => 750
+                ],
+                'preferredLocations' => ['Downtown', 'Midtown', 'West End'],
+                'budget' => ['min' => 300000, 'max' => 500000],
+                'createdAt' => '2024-07-22 10:00:00',
+                'modifiedAt' => '2024-07-27 08:00:00'
+            ],
+            [
+                'id' => '2',
+                'firstName' => 'Michael',
+                'lastName' => 'Brown',
+                'email' => 'michael.brown@company.com',
+                'phone' => '555-234-5678',
+                'title' => 'Marketing Manager',
+                'description' => 'Investment property buyer',
+                'accountId' => 'acc2',
+                'accountName' => 'Global Marketing',
+                'propertyInterests' => [
+                    [
+                        'id' => 'pi2',
+                        'propertyType' => 'Investment Property',
+                        'budget' => ['min' => 500000, 'max' => 750000],
+                        'location' => 'Business District',
+                        'timeline' => 'Within 6 months',
+                        'status' => 'Active',
+                        'priority' => 'Medium'
+                    ]
+                ],
+                'sellerProfile' => [
+                    'hasPropertyToSell' => true,
+                    'currentPropertyValue' => 400000,
+                    'reasonForSelling' => 'Upgrading',
+                    'timeframeToSell' => 'Within 3 months'
+                ],
+                'preferredLocations' => ['Business District', 'Financial Center'],
+                'budget' => ['min' => 500000, 'max' => 750000],
+                'createdAt' => '2024-07-24 14:30:00',
+                'modifiedAt' => '2024-07-27 09:00:00'
+            ],
+            [
+                'id' => '3',
+                'firstName' => 'Emily',
+                'lastName' => 'Davis',
+                'email' => 'emily.davis@real-estate.com',
+                'phone' => '555-345-6789',
+                'mobile' => '555-876-5432',
+                'title' => 'Property Manager',
+                'description' => 'Looking for rental property investment',
+                'accountId' => 'acc3',
+                'accountName' => 'Davis Properties',
+                'propertyInterests' => [
+                    [
+                        'id' => 'pi3',
+                        'propertyType' => 'Condo',
+                        'budget' => ['min' => 200000, 'max' => 350000],
+                        'location' => 'Uptown',
+                        'timeline' => 'Within 1 year',
+                        'status' => 'Active',
+                        'priority' => 'Low'
+                    ],
+                    [
+                        'id' => 'pi4',
+                        'propertyType' => 'Townhouse',
+                        'budget' => ['min' => 300000, 'max' => 450000],
+                        'location' => 'Suburbs',
+                        'timeline' => 'Within 6 months',
+                        'status' => 'Active',
+                        'priority' => 'Medium'
+                    ]
+                ],
+                'buyerProfile' => [
+                    'isFirstTimeBuyer' => false,
+                    'financingApproved' => true,
+                    'preApprovalAmount' => 500000,
+                    'downPaymentReady' => true,
+                    'creditScore' => 800
+                ],
+                'preferredLocations' => ['Uptown', 'Suburbs', 'East End'],
+                'budget' => ['min' => 200000, 'max' => 450000],
+                'createdAt' => '2024-07-20 16:45:00',
+                'modifiedAt' => '2024-07-26 15:30:00'
+            ]
+        ];
+
+        // Apply current contact assignments
+        $contact_assignments = loadContactAssignments();
+        foreach ($mockContacts as &$contact) {
+            $assignment = $contact_assignments[$contact['id']] ?? null;
+            if ($assignment) {
+                $contact['assignedUserId'] = $assignment['userId'];
+                $contact['assignedUserName'] = $assignment['userName'];
+            } else {
+                $contact['assignedUserId'] = null;
+                $contact['assignedUserName'] = 'Unassigned';
+            }
+        }
+
+        echo json_encode([
+            'success' => true,
+            'data' => $mockContacts,
+            'pagination' => [
+                'page' => 1,
+                'limit' => 50,
+                'total' => count($mockContacts),
+                'pages' => 1
+            ]
+        ]);
+
+    } elseif ($method === 'POST') {
+        // For now, just return success for contact creation
+        echo json_encode([
+            'success' => true,
+            'id' => uniqid(),
+            'message' => 'Contact created successfully'
+        ]);
+    }
 }
 
 function handleOpportunities($method) {
@@ -524,5 +672,188 @@ function handleDashboardStats() {
         'totalRevenue' => 150000,
         'conversionRate' => 15.5
     ]);
+}
+
+// Contact-specific handlers
+function handleSingleContact($method, $contactId, $input) {
+    if ($method === 'PUT' || $method === 'PATCH') {
+        if (strpos($contactId, '/assign') !== false) {
+            // Handle contact assignment
+            $contactId = str_replace('/assign', '', $contactId);
+            
+            if (!empty($input['userId']) && $input['userId'] !== 'unassign') {
+                // Assign to specific user
+                $selectedUserId = $input['userId'];
+                
+                // Use proper agent names
+                $agentNames = [
+                    'agent1' => 'Sarah Johnson',
+                    'agent2' => 'Mike Chen',
+                    'agent3' => 'Lisa Rodriguez',
+                    'agent4' => 'David Kim'
+                ];
+                $selectedUserName = $agentNames[$selectedUserId] ?? ('Agent ' . substr($selectedUserId, -4));
+                
+                // UPDATE THE CONTACT ASSIGNMENTS
+                $contact_assignments = loadContactAssignments();
+                $contact_assignments[$contactId] = [
+                    'userId' => $selectedUserId,
+                    'userName' => $selectedUserName
+                ];
+                
+                $saveSuccess = saveContactAssignments($contact_assignments);
+                
+                if ($saveSuccess) {
+                    echo json_encode([
+                        'success' => true,
+                        'message' => 'Contact assigned successfully',
+                        'data' => [
+                            'id' => $contactId,
+                            'assignedUserId' => $selectedUserId,
+                            'assignedUserName' => $selectedUserName
+                        ]
+                    ]);
+                } else {
+                    echo json_encode([
+                        'success' => false,
+                        'message' => 'Assignment failed - could not save to storage',
+                        'error' => 'STORAGE_ERROR'
+                    ]);
+                }
+            } else {
+                // Unassign contact
+                $contact_assignments = loadContactAssignments();
+                $contact_assignments[$contactId] = null;
+                
+                $saveSuccess = saveContactAssignments($contact_assignments);
+                
+                if ($saveSuccess) {
+                    echo json_encode([
+                        'success' => true,
+                        'message' => 'Contact unassigned successfully',
+                        'data' => [
+                            'id' => $contactId,
+                            'assignedUserId' => null,
+                            'assignedUserName' => 'Unassigned'
+                        ]
+                    ]);
+                } else {
+                    echo json_encode([
+                        'success' => false,
+                        'message' => 'Unassignment failed - could not save to storage',
+                        'error' => 'STORAGE_ERROR'
+                    ]);
+                }
+            }
+            return;
+        } elseif (strpos($contactId, '/property-interests') !== false) {
+            // Handle property interest operations
+            echo json_encode([
+                'success' => true,
+                'message' => 'Property interest updated successfully'
+            ]);
+            return;
+        }
+    } elseif ($method === 'POST') {
+        if (strpos($contactId, '/property-interests') !== false) {
+            // Add property interest
+            echo json_encode([
+                'success' => true,
+                'id' => uniqid(),
+                'message' => 'Property interest added successfully'
+            ]);
+            return;
+        }
+    }
+    
+    // Handle other contact operations
+    echo json_encode([
+        'success' => true,
+        'message' => 'Contact updated successfully'
+    ]);
+}
+
+function handleContactBulkAssign($input) {
+    $contactIds = $input['contactIds'] ?? [];
+    $userId = $input['userId'] ?? '';
+    
+    if (empty($contactIds) || empty($userId)) {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Missing contact IDs or user ID'
+        ]);
+        return;
+    }
+    
+    // Available agents for assignment
+    $agents = [
+        'agent1' => 'Sarah Johnson',
+        'agent2' => 'Mike Chen', 
+        'agent3' => 'Lisa Rodriguez',
+        'agent4' => 'David Kim'
+    ];
+    
+    $selectedUserName = $agents[$userId] ?? ('Agent ' . substr($userId, -4));
+    
+    $assigned = [];
+    $failed = [];
+    
+    $contact_assignments = loadContactAssignments();
+    
+    foreach ($contactIds as $contactId) {
+        // UPDATE THE CONTACT ASSIGNMENTS
+        $contact_assignments[$contactId] = [
+            'userId' => $userId,
+            'userName' => $selectedUserName
+        ];
+        
+        $assigned[] = [
+            'contactId' => $contactId,
+            'userId' => $userId,
+            'userName' => $selectedUserName
+        ];
+    }
+    
+    // Save all contact assignments
+    saveContactAssignments($contact_assignments);
+    
+    echo json_encode([
+        'success' => true,
+        'message' => count($assigned) . ' contacts assigned successfully',
+        'data' => [
+            'assigned' => $assigned,
+            'failed' => $failed
+        ]
+    ]);
+}
+
+// Contact assignment storage functions
+function loadContactAssignments() {
+    $cacheDir = getcwd() . '/cache';
+    $assignmentFile = $cacheDir . '/contact_assignments.json';
+    
+    if (!is_dir($cacheDir)) {
+        mkdir($cacheDir, 0777, true);
+    }
+    
+    if (file_exists($assignmentFile)) {
+        $content = file_get_contents($assignmentFile);
+        $assignments = json_decode($content, true);
+        return $assignments ?: [];
+    }
+    
+    return [];
+}
+
+function saveContactAssignments($assignments) {
+    $cacheDir = getcwd() . '/cache';
+    $assignmentFile = $cacheDir . '/contact_assignments.json';
+    
+    if (!is_dir($cacheDir)) {
+        mkdir($cacheDir, 0777, true);
+    }
+    
+    $success = file_put_contents($assignmentFile, json_encode($assignments));
+    return $success !== false;
 }
 ?> 

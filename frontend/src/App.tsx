@@ -8,7 +8,7 @@ import Layout from '@/components/layout/Layout'
 // Pages
 import Dashboard from '@/pages/Dashboard'
 import LeadsEnhanced from '@/pages/Leads_Enhanced'
-import Contacts from '@/pages/Contacts'
+import ContactsEnhanced from '@/pages/Contacts_Enhanced'
 import Accounts from '@/pages/Accounts'
 import Properties from '@/pages/Properties'
 import Opportunities from '@/pages/Opportunities'
@@ -63,7 +63,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/leads" element={<LeadsEnhanced />} />
-        <Route path="/contacts" element={<Contacts />} />
+        <Route path="/contacts" element={<ContactsEnhanced />} />
         <Route path="/accounts" element={<Accounts />} />
         <Route path="/properties" element={<Properties />} />
         <Route path="/opportunities" element={<Opportunities />} />

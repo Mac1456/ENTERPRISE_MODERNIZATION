@@ -147,25 +147,51 @@ export type PropertyType = 'Single Family' | 'Condo' | 'Townhouse' | 'Multi Fami
 export type PropertyStatus = 'Active' | 'Under Contract' | 'Sold' | 'Withdrawn' | 'Expired'
 
 export interface PropertyInterest {
-  propertyId: string
-  interestLevel: 'High' | 'Medium' | 'Low'
+  id: string
+  propertyType: string
+  budget?: {
+    min: number
+    max: number
+  }
+  location: string
+  timeline: string
+  status: 'Active' | 'Inactive' | 'Completed'
+  priority: 'High' | 'Medium' | 'Low'
+  bedrooms?: number
+  bathrooms?: number
+  squareFootage?: {
+    min: number
+    max: number
+  }
+  features?: string[]
   notes?: string
+  propertyId?: string
+  interestLevel?: 'High' | 'Medium' | 'Low'
   dateViewed?: string
+  createdAt?: string
+  modifiedAt?: string
 }
 
 export interface BuyerProfile {
+  isFirstTimeBuyer?: boolean
+  financingApproved?: boolean
   preApprovalAmount?: number
+  downPaymentReady?: boolean
+  creditScore?: number
   downPayment?: number
-  preferredPropertyTypes: PropertyType[]
-  mustHaveFeatures: string[]
-  dealBreakers: string[]
+  preferredPropertyTypes?: PropertyType[]
+  mustHaveFeatures?: string[]
+  dealBreakers?: string[]
 }
 
 export interface SellerProfile {
+  hasPropertyToSell?: boolean
+  currentPropertyValue?: number
   reasonForSelling: string
-  timeframe: string
+  timeframeToSell?: string
+  timeframe?: string
   expectedPrice?: number
-  propertiesToSell: string[]
+  propertiesToSell?: string[]
 }
 
 export interface TransactionMilestone {
