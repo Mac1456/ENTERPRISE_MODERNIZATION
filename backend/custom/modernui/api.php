@@ -837,43 +837,62 @@ function handleSingleContact($method, $contactId, $input) {
 
 function handleContactBulkAssign($input) {
     $contactIds = $input['contactIds'] ?? [];
-    $userId = $input['userId'] ?? '';
+    $userId = $input['userId'] ?? null;
     
-    if (empty($contactIds) || empty($userId)) {
+    if (empty($contactIds)) {
         echo json_encode([
             'success' => false,
-            'message' => 'Missing contact IDs or user ID'
+            'message' => 'Missing contact IDs'
         ]);
         return;
     }
-    
-    // Available agents for assignment
-    $agents = [
-        'agent1' => 'Sarah Johnson',
-        'agent2' => 'Mike Chen', 
-        'agent3' => 'Lisa Rodriguez',
-        'agent4' => 'David Kim'
-    ];
-    
-    $selectedUserName = $agents[$userId] ?? ('Agent ' . substr($userId, -4));
     
     $assigned = [];
     $failed = [];
     
     $contact_assignments = loadContactAssignments();
     
-    foreach ($contactIds as $contactId) {
-        // UPDATE THE CONTACT ASSIGNMENTS
-        $contact_assignments[$contactId] = [
-            'userId' => $userId,
-            'userName' => $selectedUserName
+    if ($userId === null) {
+        // Handle unassignment
+        foreach ($contactIds as $contactId) {
+            // Remove assignment (set to null)
+            $contact_assignments[$contactId] = null;
+            
+            $assigned[] = [
+                'contactId' => $contactId,
+                'userId' => null,
+                'userName' => 'Unassigned'
+            ];
+        }
+        
+        $actionMessage = count($assigned) . ' contact' . (count($assigned) > 1 ? 's' : '') . ' unassigned successfully';
+    } else {
+        // Handle assignment
+        // Available agents for assignment
+        $agents = [
+            'agent1' => 'Sarah Johnson',
+            'agent2' => 'Mike Chen', 
+            'agent3' => 'Lisa Rodriguez',
+            'agent4' => 'David Kim'
         ];
         
-        $assigned[] = [
-            'contactId' => $contactId,
-            'userId' => $userId,
-            'userName' => $selectedUserName
-        ];
+        $selectedUserName = $agents[$userId] ?? ('Agent ' . substr($userId, -4));
+        
+        foreach ($contactIds as $contactId) {
+            // UPDATE THE CONTACT ASSIGNMENTS
+            $contact_assignments[$contactId] = [
+                'userId' => $userId,
+                'userName' => $selectedUserName
+            ];
+            
+            $assigned[] = [
+                'contactId' => $contactId,
+                'userId' => $userId,
+                'userName' => $selectedUserName
+            ];
+        }
+        
+        $actionMessage = count($assigned) . ' contact' . (count($assigned) > 1 ? 's' : '') . ' assigned successfully';
     }
     
     // Save all contact assignments
@@ -881,7 +900,7 @@ function handleContactBulkAssign($input) {
     
     echo json_encode([
         'success' => true,
-        'message' => count($assigned) . ' contacts assigned successfully',
+        'message' => $actionMessage,
         'data' => [
             'assigned' => $assigned,
             'failed' => $failed

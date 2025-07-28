@@ -242,6 +242,7 @@ export default function ContactsEnhanced() {
         })
       })
       const result = await response.json()
+      
       if (result.success) {
         toast.success('Contact unassigned successfully')
         queryClient.invalidateQueries(['contacts'])
@@ -846,6 +847,10 @@ export default function ContactsEnhanced() {
               setSelectedContact(contact)
               setSelectedContactIds([contact.id])
               setShowAssignmentPanel(true)
+            }}
+            onUnassign={(contact) => {
+              setShowContactDetailModal(false)
+              handleUnassignContact(contact.id)
             }}
           />
         )}

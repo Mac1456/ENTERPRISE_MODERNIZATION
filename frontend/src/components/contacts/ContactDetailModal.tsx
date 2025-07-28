@@ -22,6 +22,7 @@ import {
   TrophyIcon,
   BanknotesIcon,
   UserPlusIcon,
+  UserMinusIcon,
   PencilIcon
 } from '@heroicons/react/24/outline'
 import { formatDistanceToNow } from 'date-fns'
@@ -39,6 +40,7 @@ interface ContactDetailModalProps {
   onEdit?: (contact: Contact) => void
   onAddPropertyInterest?: (contact: Contact) => void
   onAssign?: (contact: Contact) => void
+  onUnassign?: (contact: Contact) => void
 }
 
 export default function ContactDetailModal({
@@ -47,7 +49,8 @@ export default function ContactDetailModal({
   contact,
   onEdit,
   onAddPropertyInterest,
-  onAssign
+  onAssign,
+  onUnassign
 }: ContactDetailModalProps) {
   if (!contact) return null
 
@@ -80,6 +83,10 @@ export default function ContactDetailModal({
 
   const handleAssign = () => {
     onAssign?.(contact)
+  }
+
+  const handleUnassign = () => {
+    onUnassign?.(contact)
   }
 
   return (
@@ -405,14 +412,29 @@ export default function ContactDetailModal({
                 </div>
 
                 {/* Footer Actions */}
-                <div className="flex items-center justify-end space-x-3 p-4 border-t border-gray-200 bg-gray-50 flex-shrink-0">
+                <div className="flex items-center justify-between p-4 border-t border-gray-200 bg-gray-50 flex-shrink-0">
                   <Button variant="outline" onClick={onClose}>
                     Close
                   </Button>
-                  <Button onClick={handleAssign}>
-                    <UserPlusIcon className="w-4 h-4 mr-2" />
-                    Assign Contact
-                  </Button>
+                  <div className="flex space-x-2">
+                    {contact.assignedUserId ? (
+                      <>
+                        <Button variant="outline" onClick={handleUnassign} className="border-red-200 text-red-600 hover:bg-red-50">
+                          <UserMinusIcon className="w-4 h-4 mr-2" />
+                          Unassign Contact
+                        </Button>
+                        <Button onClick={handleAssign}>
+                          <UserPlusIcon className="w-4 h-4 mr-2" />
+                          Reassign Contact
+                        </Button>
+                      </>
+                    ) : (
+                      <Button onClick={handleAssign}>
+                        <UserPlusIcon className="w-4 h-4 mr-2" />
+                        Assign Contact
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </Dialog.Panel>
             </Transition.Child>
