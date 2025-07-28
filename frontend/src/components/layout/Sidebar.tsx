@@ -73,10 +73,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           <div className="flex h-16 shrink-0 items-center">
             <div className="flex items-center">
               <div className="w-8 h-8 bg-gradient-to-r from-crmhub-blue to-crmhub-accent rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">C</span>
+                <span className="text-white font-bold text-sm">R</span>
               </div>
               <div className="ml-3">
-                <h1 className="text-lg font-bold text-gray-900">CRMHUB</h1>
+                <h1 className="text-lg font-bold text-gray-900">RealtyEdge CRM</h1>
                 <p className="text-xs text-gray-500">Real Estate Pro</p>
               </div>
             </div>
@@ -207,10 +207,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   <div className="flex h-16 shrink-0 items-center">
                     <div className="flex items-center">
                       <div className="w-8 h-8 bg-gradient-to-r from-crmhub-blue to-crmhub-accent rounded-lg flex items-center justify-center">
-                        <span className="text-white font-bold text-sm">C</span>
+                        <span className="text-white font-bold text-sm">R</span>
                       </div>
                       <div className="ml-3">
-                        <h1 className="text-lg font-bold text-gray-900">CRMHUB</h1>
+                        <h1 className="text-lg font-bold text-gray-900">RealtyEdge CRM</h1>
                         <p className="text-xs text-gray-500">Real Estate Pro</p>
                       </div>
                     </div>

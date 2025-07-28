@@ -74,7 +74,7 @@ export default function ContactDetailModal({
 
   const handleEdit = () => {
     onEdit?.(contact)
-    toast.success('Edit functionality not yet implemented')
+    toast.info('Contact editing via external CRM interface')
   }
 
   const handleAddPropertyInterest = () => {

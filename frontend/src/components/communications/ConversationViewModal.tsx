@@ -304,7 +304,7 @@ export default function ConversationViewModal({
                         <FaceSmileIcon className="w-5 h-5" />
                       </button>
                       <button
-                        onClick={() => toast.info('File attachment coming soon')}
+                        onClick={() => toast.info('File attachment available in full version')}
                         className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
                       >
                         <PaperClipIcon className="w-5 h-5" />

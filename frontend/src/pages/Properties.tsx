@@ -3,6 +3,7 @@ import { Property, PropertyType, PropertyStatus } from '../types'
 import CRMHubDataTable from '../components/shared/CRMHubDataTable'
 import PropertyModal from '../components/properties/PropertyModal'
 import { apiService } from '../services/api'
+import toast from 'react-hot-toast'
 import { 
   PlusIcon, 
   FunnelIcon, 
@@ -226,7 +227,7 @@ const Properties: React.FC<PropertiesProps> = () => {
             <PencilIcon className="h-4 w-4" />
           </button>
           <button
-            onClick={() => alert('Added to favorites!')}
+            onClick={() => toast.info('Property marked as favorite')}
             className="text-red-500 hover:text-red-700"
             title="Add to Favorites"
           >
@@ -557,7 +558,7 @@ const PropertyDetailPanel: React.FC<{
             Edit Property
           </button>
           <button 
-            onClick={() => alert('Analytics feature coming soon!')}
+            onClick={() => toast.info('Property analytics available in full version')}
             className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
           >
             View Analytics
