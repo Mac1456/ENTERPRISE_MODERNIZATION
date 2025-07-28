@@ -17,6 +17,7 @@ import {
   FunnelIcon,
   MagnifyingGlassIcon,
   UserPlusIcon,
+  UserMinusIcon,
   MapPinIcon,
   PhoneIcon,
   EnvelopeIcon,
@@ -228,6 +229,59 @@ export default function ContactsEnhanced() {
     setShowContactDetailModal(true)
   }
 
+  // Handle unassigning a single contact
+  const handleUnassignContact = async (contactId: string) => {
+    try {
+      const response = await fetch('http://localhost:8080/custom/modernui/api.php/contacts/assign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contactIds: [contactId],
+          userId: null,
+          userName: 'Unassigned'
+        })
+      })
+      const result = await response.json()
+      if (result.success) {
+        toast.success('Contact unassigned successfully')
+        queryClient.invalidateQueries(['contacts'])
+      } else {
+        toast.error(result.message || 'Failed to unassign contact')
+      }
+    } catch (error) {
+      toast.error('Failed to unassign contact')
+      console.error('Error unassigning contact:', error)
+    }
+  }
+
+  // Handle bulk unassigning multiple contacts
+  const handleBulkUnassign = async () => {
+    if (selectedContactIds.length === 0) return
+
+    try {
+      const response = await fetch('http://localhost:8080/custom/modernui/api.php/contacts/assign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contactIds: selectedContactIds,
+          userId: null,
+          userName: 'Unassigned'
+        })
+      })
+      const result = await response.json()
+      if (result.success) {
+        toast.success(`${selectedContactIds.length} contact${selectedContactIds.length > 1 ? 's' : ''} unassigned successfully`)
+        setSelectedContactIds([])
+        queryClient.invalidateQueries(['contacts'])
+      } else {
+        toast.error(result.message || 'Failed to unassign contacts')
+      }
+    } catch (error) {
+      toast.error('Failed to unassign contacts')
+      console.error('Error unassigning contacts:', error)
+    }
+  }
+
   // Use mock data if API fails or returns empty
   const contacts = contactsData?.data || mockContacts
   
@@ -299,8 +353,25 @@ export default function ContactsEnhanced() {
         } else {
           toast.error(result.message || 'Auto-assignment failed')
         }
+      } else if (assignmentData.type === 'unassign') {
+        // Handle unassignment
+        const response = await fetch('http://localhost:8080/custom/modernui/api.php/contacts/assign', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contactIds,
+            userId: null,
+            userName: 'Unassigned'
+          })
+        })
+        const result = await response.json()
+        if (result.success) {
+          toast.success(`${contactIds.length} contact${contactIds.length > 1 ? 's' : ''} unassigned successfully`)
+        } else {
+          toast.error(result.message || 'Failed to unassign contacts')
+        }
       } else {
-        // Handle manual assignment or unassignment
+        // Handle manual assignment
         const response = await fetch('http://localhost:8080/custom/modernui/api.php/contacts/assign', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -467,10 +538,26 @@ export default function ContactsEnhanced() {
                   }}
                 >
                   <UserPlusIcon className="w-4 h-4 mr-2" />
-                  Assign Contact
+                  {contact.assignedUserId ? 'Reassign Contact' : 'Assign Contact'}
                 </button>
               )}
             </Menu.Item>
+            {contact.assignedUserId && (
+              <Menu.Item>
+                {({ active }) => (
+                  <button
+                    className={`${active ? 'bg-gray-100' : ''} flex items-center w-full px-4 py-2 text-sm text-gray-700`}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleUnassignContact(contact.id)
+                    }}
+                  >
+                    <UserMinusIcon className="w-4 h-4 mr-2 text-red-500" />
+                    Unassign Contact
+                  </button>
+                )}
+              </Menu.Item>
+            )}
           </Menu.Items>
         </Menu>
       )
@@ -664,7 +751,16 @@ export default function ContactsEnhanced() {
               }}
             >
               <UserPlusIcon className="w-4 h-4 mr-1" />
-              Assign
+              Assign/Reassign
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleBulkUnassign}
+              className="border-red-200 text-red-600 hover:bg-red-50"
+            >
+              <UserMinusIcon className="w-4 h-4 mr-1 text-red-500" />
+              Unassign
             </Button>
             <Button
               size="sm"
