@@ -249,10 +249,13 @@ export default function ContactsEnhanced() {
       console.log('📥 Response status:', response.status)
       const result = await response.json()
       console.log('📥 Response data:', result)
+      console.log('📥 Response success:', result.success)
+      console.log('📥 Response message:', result.message)
       
       if (result.success) {
         toast.success(result.message || 'Contact unassigned successfully')
-        queryClient.invalidateQueries(['contacts'])
+        // Invalidate all contact queries regardless of filters
+        queryClient.invalidateQueries({ queryKey: ['contacts'] })
       } else {
         toast.error(result.message || 'Failed to unassign contact')
       }
@@ -280,7 +283,7 @@ export default function ContactsEnhanced() {
       if (result.success) {
         toast.success(`${selectedContactIds.length} contact${selectedContactIds.length > 1 ? 's' : ''} unassigned successfully`)
         setSelectedContactIds([])
-        queryClient.invalidateQueries(['contacts'])
+        queryClient.invalidateQueries({ queryKey: ['contacts'] })
       } else {
         toast.error(result.message || 'Failed to unassign contacts')
       }
@@ -327,7 +330,7 @@ export default function ContactsEnhanced() {
       // await ContactService.createContact(contactData)
       toast.success('Contact created successfully!')
       setShowCaptureModal(false)
-      queryClient.invalidateQueries(['contacts'])
+      queryClient.invalidateQueries({ queryKey: ['contacts'] })
     } catch (error) {
       toast.error('Failed to create contact')
       console.error('Error creating contact:', error)
@@ -339,7 +342,7 @@ export default function ContactsEnhanced() {
       // await ContactService.addPropertyInterest(contactId, interestData)
       toast.success('Property interest added successfully!')
       setShowPropertyInterestModal(false)
-      queryClient.invalidateQueries(['contacts'])
+      queryClient.invalidateQueries({ queryKey: ['contacts'] })
     } catch (error) {
       toast.error('Failed to add property interest')
       console.error('Error adding property interest:', error)
@@ -399,7 +402,7 @@ export default function ContactsEnhanced() {
       
       setShowAssignmentPanel(false)
       setSelectedContactIds([])
-      queryClient.invalidateQueries(['contacts'])
+      queryClient.invalidateQueries({ queryKey: ['contacts'] })
     } catch (error) {
       toast.error('Failed to assign contacts')
       console.error('Error assigning contacts:', error)
