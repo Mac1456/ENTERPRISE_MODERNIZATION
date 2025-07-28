@@ -836,16 +836,10 @@ function handleSingleContact($method, $contactId, $input) {
 }
 
 function handleContactBulkAssign($input) {
-    error_log('🔍 handleContactBulkAssign called with input: ' . json_encode($input));
-    
     $contactIds = $input['contactIds'] ?? [];
     $userId = $input['userId'] ?? null;
     
-    error_log('📋 Contact IDs: ' . json_encode($contactIds));
-    error_log('👤 User ID: ' . json_encode($userId));
-    
     if (empty($contactIds)) {
-        error_log('❌ Missing contact IDs');
         echo json_encode([
             'success' => false,
             'message' => 'Missing contact IDs'
@@ -859,10 +853,8 @@ function handleContactBulkAssign($input) {
     $contact_assignments = loadContactAssignments();
     
     if ($userId === null) {
-        error_log('🔓 Handling unassignment');
         // Handle unassignment
         foreach ($contactIds as $contactId) {
-            error_log('🔓 Unassigning contact: ' . $contactId);
             // Remove assignment (set to null)
             $contact_assignments[$contactId] = null;
             
@@ -874,7 +866,6 @@ function handleContactBulkAssign($input) {
         }
         
         $actionMessage = count($assigned) . ' contact' . (count($assigned) > 1 ? 's' : '') . ' unassigned successfully';
-        error_log('✅ Unassignment message: ' . $actionMessage);
     } else {
         // Handle assignment
         // Available agents for assignment
@@ -905,20 +896,16 @@ function handleContactBulkAssign($input) {
     }
     
     // Save all contact assignments
-    $saveResult = saveContactAssignments($contact_assignments);
-    error_log('💾 Save result: ' . ($saveResult ? 'success' : 'failed'));
+    saveContactAssignments($contact_assignments);
     
-    $response = [
+    echo json_encode([
         'success' => true,
         'message' => $actionMessage,
         'data' => [
             'assigned' => $assigned,
             'failed' => $failed
         ]
-    ];
-    
-    error_log('📤 Sending response: ' . json_encode($response));
-    echo json_encode($response);
+    ]);
 }
 
 // Contact assignment storage functions
@@ -940,22 +927,14 @@ function loadContactAssignments() {
 }
 
 function saveContactAssignments($assignments) {
-    error_log('💾 Saving contact assignments: ' . json_encode($assignments));
     $cacheDir = getcwd() . '/cache';
     $assignmentFile = $cacheDir . '/contact_assignments.json';
-    
-    error_log('📁 Cache dir: ' . $cacheDir);
-    error_log('📄 Assignment file: ' . $assignmentFile);
 
     if (!is_dir($cacheDir)) {
-        $mkdirResult = mkdir($cacheDir, 0777, true);
-        error_log('📁 Created cache dir: ' . ($mkdirResult ? 'success' : 'failed'));
+        mkdir($cacheDir, 0777, true);
     }
 
     $success = file_put_contents($assignmentFile, json_encode($assignments, JSON_PRETTY_PRINT));
-    error_log('💾 File write result: ' . ($success !== false ? 'success (' . $success . ' bytes)' : 'failed'));
-    error_log('📄 File exists after write: ' . (file_exists($assignmentFile) ? 'yes' : 'no'));
-    
     return $success !== false;
 }
 

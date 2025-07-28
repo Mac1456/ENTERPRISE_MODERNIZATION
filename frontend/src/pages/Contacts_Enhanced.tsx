@@ -231,26 +231,17 @@ export default function ContactsEnhanced() {
 
   // Handle unassigning a single contact
   const handleUnassignContact = async (contactId: string) => {
-    console.log('🔍 Starting unassignment for contact:', contactId)
     try {
-      const requestData = {
-        contactIds: [contactId],
-        userId: null,
-        userName: 'Unassigned'
-      }
-      console.log('📤 Sending request:', requestData)
-      
       const response = await fetch('http://localhost:8080/custom/modernui/api.php/contacts/assign', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestData)
+        body: JSON.stringify({
+          contactIds: [contactId],
+          userId: null,
+          userName: 'Unassigned'
+        })
       })
-      
-      console.log('📥 Response status:', response.status)
       const result = await response.json()
-      console.log('📥 Response data:', result)
-      console.log('📥 Response success:', result.success)
-      console.log('📥 Response message:', result.message)
       
       if (result.success) {
         toast.success(result.message || 'Contact unassigned successfully')
@@ -261,7 +252,7 @@ export default function ContactsEnhanced() {
       }
     } catch (error) {
       toast.error('Failed to unassign contact')
-      console.error('❌ Error unassigning contact:', error)
+      console.error('Error unassigning contact:', error)
     }
   }
 
